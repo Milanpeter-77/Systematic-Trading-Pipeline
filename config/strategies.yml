@@ -1,0 +1,13 @@
+trend:
+  class_name: "TrendStrategy"
+  enabled: true
+  parameters:
+    fast_window: [12, 24]
+    slow_window: [72, 120, 240]
+
+mean_reversion:
+  class_name: "MeanReversionStrategy"
+  enabled: true
+  parameters:
+    lookback: [24, 48, 96]
+    entry_z: [1.5, 2.0]

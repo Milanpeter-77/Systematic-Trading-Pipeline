@@ -1,0 +1,9 @@
+family,symbol,candidate_count,median_full_sample_sharpe,layer1_passes,layer2_passes,layer3_passes,layer4_passes,final_survivors
+mean_reversion,ETHUSD,6,-0.9622627356619833,0,0,0,0,0
+mean_reversion,SPXUSD,6,0.10422760163509555,0,0,4,0,0
+mean_reversion,USDJPY,6,-0.9039185491219248,0,0,2,0,0
+mean_reversion,XAUUSD,6,-0.7302134257750624,0,0,0,0,0
+trend,ETHUSD,6,0.4406189205113856,2,0,0,0,0
+trend,SPXUSD,6,0.07345380299333165,0,0,1,0,0
+trend,USDJPY,6,-0.0798989965530878,2,3,6,0,0
+trend,XAUUSD,6,0.5749887301820964,4,6,6,0,0

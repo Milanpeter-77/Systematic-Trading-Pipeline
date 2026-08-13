@@ -1,0 +1,43 @@
+{
+  "source_file": "SPXUSD_M1_202001012300_202605220914.csv",
+  "asset_class": "equity_index",
+  "expected_session": "broker_defined",
+  "tick_size": 0.01,
+  "m1": {
+    "symbol": "SPXUSD",
+    "row_count": 2255572,
+    "start_timestamp": "2020-01-01T23:00:00",
+    "end_timestamp": "2026-05-22T09:14:00",
+    "invalid_timestamp_count": 0,
+    "duplicate_timestamp_rows": 0,
+    "missing_required_value_count": 0,
+    "nonpositive_price_count": 0,
+    "invalid_ohlc_count": 0,
+    "negative_spread_count": 0,
+    "zero_spread_count": 169,
+    "extreme_return_count": 0,
+    "extreme_range_count": 0,
+    "largest_time_gap_minutes": 4605.0,
+    "median_positive_spread_points": 31.0,
+    "positive_spread_p95": 39.0,
+    "positive_spread_p99": 39.0,
+    "removed_invalid_rows": 0,
+    "duplicate_rows_identified": 0,
+    "rows_after_cleaning": 2255572
+  },
+  "h1": {
+    "symbol": "SPXUSD",
+    "hourly_bar_count": 38224,
+    "start_timestamp": "2020-01-01T23:00:00",
+    "end_timestamp": "2026-05-22T09:00:00",
+    "complete_hour_count": 36434,
+    "incomplete_hour_count": 1790,
+    "median_minutes_per_hour": 60.0,
+    "minimum_minutes_per_hour": 1,
+    "hours_below_80_percent_coverage": 756,
+    "hours_with_imputed_spread": 78,
+    "median_spread_fraction": 6.867195672317573e-05,
+    "spread_fraction_p95": 9.64266067376023e-05,
+    "spread_fraction_p99": 0.0001165508430244291
+  }
+}

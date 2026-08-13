@@ -1,0 +1,29 @@
+{
+  "official_candidate_count": 48,
+  "final_survivor_count": 0,
+  "final_survival_rate": 0.0,
+  "best_full_sample_candidate": "trend__ETHUSD__fast_window-24__slow_window-240",
+  "best_full_sample_net_sharpe": 0.7304455796077309,
+  "funnel": [
+    {
+      "stage": "Generated",
+      "survivors": 48
+    },
+    {
+      "stage": "Layer 1",
+      "survivors": 8
+    },
+    {
+      "stage": "Layer 2",
+      "survivors": 4
+    },
+    {
+      "stage": "Layer 3",
+      "survivors": 4
+    },
+    {
+      "stage": "Layer 4",
+      "survivors": 0
+    }
+  ]
+}

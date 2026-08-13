@@ -1,0 +1,48 @@
+USDJPY:
+  sec_type: "CASH"
+  ibkr_symbol: "USD"          # CASH convention: symbol = base currency
+  currency: "JPY"              # currency = quote currency
+  exchange: "IDEALPRO"
+  what_to_show: "MIDPOINT"     # forex has no consolidated trade tape
+  use_regular_trading_hours: false
+  tick_size: 0.001
+  asset_class: "fx"
+  expected_session: "24/5"
+
+ETHUSD:
+  sec_type: "CRYPTO"
+  ibkr_symbol: "ETH"
+  currency: "USD"
+  exchange: "PAXOS"
+  what_to_show: "AGGTRADES"
+  use_regular_trading_hours: false
+  tick_size: 0.001
+  asset_class: "crypto"
+  expected_session: "24/7"
+
+XAUUSD:
+  sec_type: "CMDTY"
+  ibkr_symbol: "XAUUSD"
+  currency: "USD"
+  exchange: "SMART"
+  what_to_show: "MIDPOINT"     # spot metals have no consolidated trade tape either
+  use_regular_trading_hours: false
+  tick_size: 0.001
+  asset_class: "commodity"
+  expected_session: "24/5"
+
+# UNCONFIRMED: SPXUSD was a broker-synthetic ticker with no unambiguous native
+# IBKR equivalent. IND contracts can't be traded and often only support daily
+# bars, not intraday. Test this one standalone (not as part of a multi-symbol
+# run) before trusting it. Alternatives if it fails: an SPX CFD (needs CFD
+# permissions) or SPY (stock_contract already works, proven on TRADES).
+SPXUSD:
+  sec_type: "IND"
+  ibkr_symbol: "SPX"
+  currency: "USD"
+  exchange: "CBOE"
+  what_to_show: "TRADES"
+  use_regular_trading_hours: true
+  tick_size: 0.01
+  asset_class: "equity_index"
+  expected_session: "broker_defined"

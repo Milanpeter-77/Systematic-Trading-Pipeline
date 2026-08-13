@@ -1,0 +1,43 @@
+{
+  "source_file": "USDJPY.l_M1_202001012200_202606050000.csv",
+  "asset_class": "fx",
+  "expected_session": "24/5",
+  "tick_size": 0.001,
+  "m1": {
+    "symbol": "USDJPY",
+    "row_count": 2394143,
+    "start_timestamp": "2020-01-01T22:00:00",
+    "end_timestamp": "2026-06-05T00:00:00",
+    "invalid_timestamp_count": 0,
+    "duplicate_timestamp_rows": 0,
+    "missing_required_value_count": 0,
+    "nonpositive_price_count": 0,
+    "invalid_ohlc_count": 0,
+    "negative_spread_count": 0,
+    "zero_spread_count": 221519,
+    "extreme_return_count": 0,
+    "extreme_range_count": 0,
+    "largest_time_gap_minutes": 4331.0,
+    "median_positive_spread_points": 6.0,
+    "positive_spread_p95": 16.0,
+    "positive_spread_p99": 71.0,
+    "removed_invalid_rows": 0,
+    "duplicate_rows_identified": 0,
+    "rows_after_cleaning": 2394143
+  },
+  "h1": {
+    "symbol": "USDJPY",
+    "hourly_bar_count": 40077,
+    "start_timestamp": "2020-01-01T22:00:00",
+    "end_timestamp": "2026-06-05T00:00:00",
+    "complete_hour_count": 38588,
+    "incomplete_hour_count": 1489,
+    "median_minutes_per_hour": 60.0,
+    "minimum_minutes_per_hour": 1,
+    "hours_below_80_percent_coverage": 192,
+    "hours_with_imputed_spread": 21748,
+    "median_spread_fraction": 3.7756745871929116e-05,
+    "spread_fraction_p95": 0.0001434464087866116,
+    "spread_fraction_p99": 0.0004889697488154852
+  }
+}

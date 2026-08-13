@@ -1,0 +1,118 @@
+experiment:
+  timeframe: "1h"
+  random_seed: 42
+  candidate_count_expected: 48
+
+strategies:
+  trend:
+    fast_window: [12, 24]
+    slow_window: [72, 120, 240]
+
+  mean_reversion:
+    lookback: [24, 48, 96]
+    entry_z: [1.5, 2.0]
+
+data_quality:
+  timeframe: "1h"
+  minimum_signal_bar_coverage: 0.80
+  retain_low_coverage_bars: true
+  allow_new_signal_on_low_coverage_bar: false
+  allow_fill_on_low_coverage_bar: false
+
+spread_cleaning:
+  treat_nonpositive_spread_as_missing: true
+  method: "trailing_median"
+  rolling_window_m1: 60
+  minimum_observations: 10
+  preserve_raw_spread: true
+
+backtest:
+  return_convention: "open_to_open"
+  execution_delay_bars: 1
+  minimum_signal_bar_coverage: 0.80
+  minimum_fill_bar_coverage: 0.80
+  commission_bps_per_side: 0.50
+  initial_position: 0
+  annualization_hours: 8760
+
+sample:
+  in_sample_start: "2020-01-01 00:00:00"
+  in_sample_end: "2023-12-31 23:59:59"
+  out_of_sample_start: "2024-01-01 00:00:00"
+
+layer1:
+  minimum_oos_net_sharpe: 0.30
+  minimum_oos_net_return: 0.00
+  minimum_oos_trades: 30
+  maximum_top_5_trade_profit_share: 0.50
+
+  parameter_perturbation: 0.20
+  minimum_positive_neighbors: 3
+  minimum_median_neighbor_sharpe: 0.00
+  minimum_worst_neighbor_sharpe: -0.50
+
+layer2:
+  train_weeks: 104
+  test_weeks: 26
+  step_weeks: 26
+  expanding_window: false
+  minimum_completed_folds: 5
+  parameter_perturbation: 0.20
+
+  optimization:
+    scope: local_neighborhood
+    objective: net_sharpe
+    minimum_training_trades: 30
+    fallback_policy: original_candidate
+    warmup_weeks: 0
+    mark_fallback_as_ineligible: true
+    tie_break:
+      - lower_max_drawdown
+      - higher_net_return
+      - fewer_trades
+      - parameter_order
+
+  criteria:
+    minimum_oos_sharpe: 0.25
+    minimum_oos_return: 0.00
+    minimum_profitable_fold_share: 0.50
+    minimum_oos_trades: 30
+    maximum_drawdown: 0.35
+
+layer3:
+  march_2020_start: "2020-03-01 00:00:00"
+  march_2020_end: "2020-03-31 23:59:59"
+
+  worst_window_days: 30
+  worst_window_count: 3
+  minimum_worst_window_separation_days: 30
+
+  return_stress_multiplier: 1.50
+  spread_stress_multiplier: 2.00
+
+  maximum_march_2020_drawdown: 0.35
+  minimum_march_2020_net_return: -0.30
+
+  maximum_worst_window_drawdown: 0.40
+  minimum_worst_window_net_return: -0.30
+
+  maximum_synthetic_drawdown: 0.45
+  minimum_synthetic_total_return: -0.35
+  minimum_synthetic_terminal_nav: 0.65
+
+layer4:
+  random_seed: 42
+
+  permutation_count: 2000
+  permutation_chunk_size: 100
+  maximum_permutation_p_value: 0.05
+
+  bootstrap_count: 5000
+  bootstrap_chunk_size: 500
+  maximum_bootstrap_drawdown_p95: 0.40
+  maximum_probability_negative_return: 0.20
+
+  deflated_sharpe_minimum_probability: 0.95
+  official_trial_count: 48
+
+  minimum_trades_for_bootstrap: 30
