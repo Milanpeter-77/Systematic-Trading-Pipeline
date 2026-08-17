@@ -36,6 +36,11 @@ class MeanReversionStrategy(BaseStrategy):
 
     family_name = "mean_reversion"
     parameter_names = ("lookback", "entry_z")
+    parameter_grid = {
+        "lookback": [24, 48, 96],
+        "entry_z": [1.5, 2.0],
+    }
+    enabled = True
 
     def validate_parameters(self) -> None:
         super().validate_parameters()
@@ -123,10 +128,6 @@ class MeanReversionStrategy(BaseStrategy):
             [1, -1],
             default=0,
         ).astype("int8")
-
-        result["signal_eligible"] = (
-            result["coverage_ratio"] >= 0.80
-        )
 
         result["target_position"] = target_positions
 

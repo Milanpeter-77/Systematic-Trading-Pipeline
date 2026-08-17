@@ -17,6 +17,8 @@ class BaseStrategy(ABC):
 
     family_name: str
     parameter_names: tuple[str, ...]
+    parameter_grid: dict[str, list[int | float]]
+    enabled: bool
 
     def __init__(self, **parameters: Any) -> None:
         self.parameters = parameters
@@ -65,7 +67,6 @@ class BaseStrategy(ABC):
             "high",
             "low",
             "close",
-            "coverage_ratio",
         }
 
         missing = required_columns.difference(data.columns)

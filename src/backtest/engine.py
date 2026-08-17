@@ -91,8 +91,6 @@ def run_candidate_backtest(
     candidate: CandidateSpec,
     market_data: pd.DataFrame,
     commission_bps_per_side: float = 0.5,
-    minimum_signal_coverage: float = 0.80,
-    minimum_fill_coverage: float = 0.80,
 ) -> BacktestResult:
     """
     Run one strategy candidate through the execution and cost engine.
@@ -102,7 +100,6 @@ def run_candidate_backtest(
         "high",
         "low",
         "close",
-        "coverage_ratio",
         "fill_spread_fraction",
     }
 
@@ -126,8 +123,6 @@ def run_candidate_backtest(
 
     executed = build_executed_positions(
         strategy_output=strategy_output,
-        minimum_signal_coverage=minimum_signal_coverage,
-        minimum_fill_coverage=minimum_fill_coverage,
         initial_position=0,
     )
 

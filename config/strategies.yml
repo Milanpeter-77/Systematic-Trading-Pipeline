@@ -1,17 +1,24 @@
 # ---------------------------------------------------------------------------
-# Manually curated list of validated strategy candidates approved to run
-# live in the execution package.
+# This is the only strategy config file. Strategy families, their
+# parameters, and their parameter grids are declared in code (as class
+# attributes on each BaseStrategy subclass under src/strategies/) -- not
+# here. This file holds only the manually curated list of validated
+# strategy candidates approved to run live in the execution package.
 #
-# This file is edited BY HAND, never generated. A candidate only belongs
-# here after a human has reviewed it in results/gate/final_survivors.csv
-# and decided to promote it. There is no automatic promotion step (see
-# src/execution/strategy_loader.py).
+# The deployed_strategies list below is reviewed and approved BY HAND. A
+# candidate only belongs here after a human has reviewed it in
+# results/gate/final_survivors.csv and decided to promote it.
+#
+# src/factory/promotion.py automates the mechanical part of that: run
+# `python -m src.factory.promotion` to see which candidates in
+# results/gate/final_survivors.csv aren't listed below yet, and re-run with
+# `--write` to append them. It only ever appends new entries -- it never
+# removes or reorders existing ones -- and it is not part of the automatic
+# pipeline (src.pipelines.alpha_factory.pipeline), so nothing is promoted
+# without you explicitly running it.
 #
 # Each entry must be a candidate_id string that appears verbatim in the
 # `candidate_id` column of results/gate/final_survivors.csv.
-#
-# Starts empty -- uncomment / add entries only once you have actually
-# reviewed and approved a candidate for live trading.
 # ---------------------------------------------------------------------------
 
 deployed_strategies: []

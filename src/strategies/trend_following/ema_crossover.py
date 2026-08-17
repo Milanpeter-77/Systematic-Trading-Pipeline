@@ -35,6 +35,11 @@ class TrendStrategy(BaseStrategy):
 
     family_name = "trend"
     parameter_names = ("fast_window", "slow_window")
+    parameter_grid = {
+        "fast_window": [12, 24],
+        "slow_window": [72, 120, 240],
+    }
+    enabled = True
 
     def validate_parameters(self) -> None:
         super().validate_parameters()
@@ -97,10 +102,6 @@ class TrendStrategy(BaseStrategy):
             [1, -1],
             default=0,
         ).astype("int8")
-
-        result["signal_eligible"] = (
-            result["coverage_ratio"] >= 0.80
-        )
 
         result["target_position"] = result["raw_signal"].astype("int8")
 

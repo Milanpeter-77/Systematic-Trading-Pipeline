@@ -1,38 +1,11 @@
 from __future__ import annotations
 
 from itertools import product
-from pathlib import Path
-from typing import Any
 
 import pandas as pd
-import yaml
 
 from src.factory.candidate import CandidateSpec
-from src.factory.registry import create_strategy
-
-
-def load_strategy_config(
-    config_path: str | Path,
-) -> dict[str, dict[str, Any]]:
-    """
-    Load the strategy-family configuration.
-    """
-    config_path = Path(config_path)
-
-    if not config_path.exists():
-        raise FileNotFoundError(
-            f"Strategy configuration not found: {config_path}"
-        )
-
-    with config_path.open("r", encoding="utf-8") as file:
-        config = yaml.safe_load(file)
-
-    if not isinstance(config, dict) or not config:
-        raise ValueError(
-            f"Strategy configuration is empty or invalid: {config_path}"
-        )
-
-    return config
+from src.factory.registry import STRATEGY_REGISTRY
 
 
 def expand_parameter_grid(
@@ -64,37 +37,26 @@ def expand_parameter_grid(
 
 def generate_candidates(
     symbols: list[str],
-    strategy_config: dict[str, dict[str, Any]],
 ) -> list[CandidateSpec]:
     """
-    Expand all enabled families across parameter grids and symbols.
+    Expand every enabled registered strategy across its parameter grid and symbols.
     """
     if not symbols:
         raise ValueError("At least one symbol is required.")
 
     candidates: list[CandidateSpec] = []
 
-    for family, family_config in strategy_config.items():
-        if not family_config.get("enabled", True):
+    for family, strategy_class in STRATEGY_REGISTRY.items():
+        if not strategy_class.enabled:
             continue
 
-        parameter_grid = family_config.get("parameters")
-
-        if not isinstance(parameter_grid, dict):
-            raise ValueError(
-                f"Family '{family}' has no valid parameter grid."
-            )
-
         parameter_combinations = expand_parameter_grid(
-            parameter_grid
+            strategy_class.parameter_grid
         )
 
         for parameters in parameter_combinations:
             # Instantiation validates parameter names and numerical rules.
-            create_strategy(
-                family=family,
-                parameters=parameters,
-            )
+            strategy_class(**parameters)
 
             for symbol in symbols:
                 candidate = CandidateSpec(
@@ -137,3 +99,41 @@ def candidates_to_frame(
         ).reset_index(drop=True)
 
     return candidates_frame
+
+
+def candidates_to_frames_by_family(
+    candidates: list[CandidateSpec],
+) -> dict[str, pd.DataFrame]:
+    """
+    Convert candidate specifications into one tabular registry per family.
+
+    Each family has its own parameter names, so a single combined table
+    would carry parameter columns that are meaningless (NaN) for every
+    other family. Splitting by family keeps each table limited to that
+    family's own columns.
+    """
+    candidates_frame = candidates_to_frame(candidates)
+
+    frames_by_family: dict[str, pd.DataFrame] = {}
+
+    for family, group in candidates_frame.groupby("family"):
+        family_frame = group.dropna(axis="columns", how="all").reset_index(
+            drop=True
+        )
+
+        for column in family_frame.columns:
+            if column in {"candidate_id", "family", "symbol"}:
+                continue
+
+            # Columns with NaN elsewhere (other families) are upcast to
+            # float by the combined frame -- restore int for parameters
+            # whose grid only ever holds whole numbers.
+            if (
+                pd.api.types.is_float_dtype(family_frame[column])
+                and (family_frame[column] % 1 == 0).all()
+            ):
+                family_frame[column] = family_frame[column].astype(int)
+
+        frames_by_family[family] = family_frame
+
+    return frames_by_family

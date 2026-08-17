@@ -16,7 +16,7 @@ from src.backtest.metrics import (
 )
 from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
-from src.validation.oos import calculate_window_metrics, generate_parameter_neighbors
+from src.validation.layer1_oos import calculate_window_metrics, generate_parameter_neighbors
 
 
 logger = logging.getLogger(__name__)
@@ -274,8 +274,6 @@ def _evaluate_variant_on_window(
     window_start: pd.Timestamp,
     window_end: pd.Timestamp,
     commission_bps_per_side: float,
-    minimum_signal_coverage: float,
-    minimum_fill_coverage: float,
 ) -> tuple[dict[str, Any], pd.DataFrame]:
     window_market_data = _slice_backtest_input(market_data=market_data, start=window_start, end=window_end)
 
@@ -283,8 +281,6 @@ def _evaluate_variant_on_window(
         candidate=variant,
         market_data=window_market_data,
         commission_bps_per_side=commission_bps_per_side,
-        minimum_signal_coverage=minimum_signal_coverage,
-        minimum_fill_coverage=minimum_fill_coverage,
     )
 
     window_timeseries = backtest.timeseries.loc[
@@ -363,8 +359,6 @@ def _evaluate_fold(
     window: WalkForwardWindow,
     config: Layer2Config,
     commission_bps_per_side: float,
-    minimum_signal_coverage: float,
-    minimum_fill_coverage: float,
 ) -> tuple[dict[str, Any], pd.DataFrame]:
     variants = _local_variants(candidate=candidate, perturbation=config.parameter_perturbation)
 
@@ -377,8 +371,6 @@ def _evaluate_fold(
             window_start=window.train_start,
             window_end=window.train_end,
             commission_bps_per_side=commission_bps_per_side,
-            minimum_signal_coverage=minimum_signal_coverage,
-            minimum_fill_coverage=minimum_fill_coverage,
         )
 
         training_records.append(
@@ -414,8 +406,6 @@ def _evaluate_fold(
         window_start=warmup_start,
         window_end=window.test_end,
         commission_bps_per_side=commission_bps_per_side,
-        minimum_signal_coverage=minimum_signal_coverage,
-        minimum_fill_coverage=minimum_fill_coverage,
     )
 
     test_timeseries = warmup_test_timeseries.loc[
@@ -600,8 +590,6 @@ def evaluate_layer2_candidate(
     market_data: pd.DataFrame,
     layer2_config: dict[str, Any],
     commission_bps_per_side: float = 0.5,
-    minimum_signal_coverage: float = 0.80,
-    minimum_fill_coverage: float = 0.80,
 ) -> tuple[dict[str, Any], pd.DataFrame]:
     config = _validate_layer2_config(layer2_config)
     candidate = result.candidate
@@ -633,8 +621,6 @@ def evaluate_layer2_candidate(
             window=window,
             config=config,
             commission_bps_per_side=commission_bps_per_side,
-            minimum_signal_coverage=minimum_signal_coverage,
-            minimum_fill_coverage=minimum_fill_coverage,
         )
 
         fold_records.append(fold_record)
@@ -677,8 +663,6 @@ def run_layer2_gate(
     processed_data: dict[str, pd.DataFrame],
     layer2_config: dict[str, Any],
     commission_bps_per_side: float = 0.5,
-    minimum_signal_coverage: float = 0.80,
-    minimum_fill_coverage: float = 0.80,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     _validate_layer2_config(layer2_config)
 
@@ -698,8 +682,6 @@ def run_layer2_gate(
             market_data=processed_data[symbol],
             layer2_config=layer2_config,
             commission_bps_per_side=commission_bps_per_side,
-            minimum_signal_coverage=minimum_signal_coverage,
-            minimum_fill_coverage=minimum_fill_coverage,
         )
 
         candidate_records.append(record)

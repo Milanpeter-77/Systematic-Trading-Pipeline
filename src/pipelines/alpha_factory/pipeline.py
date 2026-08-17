@@ -13,8 +13,8 @@ from src.data.retrieval import load_instrument_config
 from src.factory.candidate import candidate_from_record
 from src.factory.generator import (
     candidates_to_frame,
+    candidates_to_frames_by_family,
     generate_candidates,
-    load_strategy_config,
 )
 from src.logging_config import configure_logging
 from src.reporting.figures import save_report_figures
@@ -22,10 +22,10 @@ from src.reporting.report_data import load_report_data
 from src.reporting.summaries import build_report_summary
 from src.reporting.tables import save_report_tables
 from src.validation.criteria import load_gate_config
-from src.validation.oos import run_layer1_gate
-from src.validation.statistics import run_layer4_gate
-from src.validation.stress import run_layer3_gate
-from src.validation.walkforward import run_layer2_gate
+from src.validation.layer1_oos import run_layer1_gate
+from src.validation.layer2_walkforward import run_layer2_gate
+from src.validation.layer3_stress import run_layer3_gate
+from src.validation.layer4_statistics import run_layer4_gate
 
 
 logger = logging.getLogger(__name__)
@@ -35,11 +35,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 PROCESSED_DATA_DIRECTORY = PROJECT_ROOT / "data" / "processed"
 RESULTS_DIRECTORY = PROJECT_ROOT / "results"
+CANDIDATE_RESULTS_DIRECTORY = RESULTS_DIRECTORY / "candidates"
 BACKTEST_RESULTS_DIRECTORY = RESULTS_DIRECTORY / "backtests"
-GATE_RESULTS_DIRECTORY = RESULTS_DIRECTORY / "gate"
+VALIDATION_RESULTS_DIRECTORY = RESULTS_DIRECTORY / "validation"
 REPORT_RESULTS_DIRECTORY = RESULTS_DIRECTORY / "report"
 INSTRUMENT_CONFIG_PATH = PROJECT_ROOT / "config" / "instruments.yml"
-STRATEGY_CONFIG_PATH = PROJECT_ROOT / "config" / "strategies.yml"
 VALIDATION_CONFIG_PATH = PROJECT_ROOT / "config" / "validation.yml"
 
 
@@ -55,17 +55,10 @@ def build_candidate_population(
         )
     )
 
-    strategy_config = (
-        load_strategy_config(
-            STRATEGY_CONFIG_PATH
-        )
-    )
-
     candidates = generate_candidates(
         symbols=list(
             instrument_config
         ),
-        strategy_config=strategy_config,
     )
 
     candidates_frame = (
@@ -87,16 +80,19 @@ def build_candidate_population(
         )
 
     if save_output:
-        RESULTS_DIRECTORY.mkdir(
+        CANDIDATE_RESULTS_DIRECTORY.mkdir(
             parents=True,
             exist_ok=True,
         )
 
-        candidates_frame.to_csv(
-            RESULTS_DIRECTORY
-            / "candidates.csv",
-            index=False,
-        )
+        for family, family_frame in candidates_to_frames_by_family(
+            candidates
+        ).items():
+            family_frame.to_csv(
+                CANDIDATE_RESULTS_DIRECTORY
+                / f"{family}.csv",
+                index=False,
+            )
 
     return candidates_frame
 
@@ -176,8 +172,6 @@ def run_all_candidate_backtests(
                 candidate.symbol
             ],
             commission_bps_per_side=0.5,
-            minimum_signal_coverage=0.80,
-            minimum_fill_coverage=0.80,
         )
 
         results[
@@ -220,27 +214,6 @@ def run_all_candidate_backtests(
             index=False,
         )
 
-        for candidate_id, result in (
-            results.items()
-        ):
-            safe_id = (
-                candidate_id.replace(
-                    "/",
-                    "_",
-                )
-            )
-
-            result.trades.to_parquet(
-                BACKTEST_RESULTS_DIRECTORY
-                / f"{safe_id}__trades.parquet",
-                index=False,
-            )
-
-            result.timeseries.to_parquet(
-                BACKTEST_RESULTS_DIRECTORY
-                / f"{safe_id}__timeseries.parquet",
-            )
-
     return metrics_frame, results
 
 
@@ -278,24 +251,22 @@ def run_layer1_validation(
             "layer1"
         ],
         commission_bps_per_side=0.5,
-        minimum_signal_coverage=0.80,
-        minimum_fill_coverage=0.80,
     )
 
     if save_output:
-        GATE_RESULTS_DIRECTORY.mkdir(
+        VALIDATION_RESULTS_DIRECTORY.mkdir(
             parents=True,
             exist_ok=True,
         )
 
         layer1_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer1_results.csv",
             index=False,
         )
 
         neighbor_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer1_neighbor_results.csv",
             index=False,
         )
@@ -305,7 +276,7 @@ def run_layer1_validation(
                 "layer1_pass"
             ]
         ].to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer1_survivors.csv",
             index=False,
         )
@@ -347,24 +318,22 @@ def run_layer2_validation(
             "layer2"
         ],
         commission_bps_per_side=0.5,
-        minimum_signal_coverage=0.80,
-        minimum_fill_coverage=0.80,
     )
 
     if save_output:
-        GATE_RESULTS_DIRECTORY.mkdir(
+        VALIDATION_RESULTS_DIRECTORY.mkdir(
             parents=True,
             exist_ok=True,
         )
 
         layer2_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer2_results.csv",
             index=False,
         )
 
         window_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer2_window_results.csv",
             index=False,
         )
@@ -374,7 +343,7 @@ def run_layer2_validation(
                 "layer2_pass"
             ]
         ].to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer2_survivors.csv",
             index=False,
         )
@@ -420,25 +389,25 @@ def run_layer3_validation(
     )
 
     if save_output:
-        GATE_RESULTS_DIRECTORY.mkdir(
+        VALIDATION_RESULTS_DIRECTORY.mkdir(
             parents=True,
             exist_ok=True,
         )
 
         layer3_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer3_results.csv",
             index=False,
         )
 
         historical_stress_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer3_historical_stress_results.csv",
             index=False,
         )
 
         synthetic_stress_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer3_synthetic_stress_results.csv",
             index=False,
         )
@@ -448,7 +417,7 @@ def run_layer3_validation(
                 "layer3_pass"
             ]
         ].to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer3_survivors.csv",
             index=False,
         )
@@ -490,25 +459,25 @@ def run_layer4_validation(
     )
 
     if save_output:
-        GATE_RESULTS_DIRECTORY.mkdir(
+        VALIDATION_RESULTS_DIRECTORY.mkdir(
             parents=True,
             exist_ok=True,
         )
 
         layer4_results.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer4_results.csv",
             index=False,
         )
 
         permutation_results.to_parquet(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer4_permutation_results.parquet",
             index=False,
         )
 
         bootstrap_results.to_parquet(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer4_bootstrap_results.parquet",
             index=False,
         )
@@ -518,7 +487,7 @@ def run_layer4_validation(
                 "layer4_pass"
             ]
         ].to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "layer4_survivors.csv",
             index=False,
         )
@@ -726,19 +695,19 @@ def build_final_funnel(
     )
 
     if save_output:
-        GATE_RESULTS_DIRECTORY.mkdir(
+        VALIDATION_RESULTS_DIRECTORY.mkdir(
             parents=True,
             exist_ok=True,
         )
 
         final_funnel.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "final_funnel.csv",
             index=False,
         )
 
         final_survivors.to_csv(
-            GATE_RESULTS_DIRECTORY
+            VALIDATION_RESULTS_DIRECTORY
             / "final_survivors.csv",
             index=False,
         )

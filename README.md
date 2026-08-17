@@ -68,7 +68,7 @@ Every official candidate is evaluated independently by all four gate layers. The
 │   └── alpha_factory_report.tex
 ├── results/
 │   ├── backtests/
-│   ├── gate/
+│   ├── validation/
 │   └── report/
 ├── scripts/
 │   └── run_pipeline.py
@@ -240,21 +240,21 @@ results/backtests/candidate_metrics.csv
 
 Candidate-level time series and trades may additionally be stored as Parquet files.
 
-### Gate results
+### Validation results
 
 ```text
-results/gate/layer1_results.csv
-results/gate/layer1_neighbor_results.csv
-results/gate/layer2_results.csv
-results/gate/layer2_window_results.csv
-results/gate/layer3_results.csv
-results/gate/layer3_historical_stress_results.csv
-results/gate/layer3_synthetic_stress_results.csv
-results/gate/layer4_results.csv
-results/gate/layer4_permutation_results.parquet
-results/gate/layer4_bootstrap_results.parquet
-results/gate/final_funnel.csv
-results/gate/final_survivors.csv
+results/validation/layer1_results.csv
+results/validation/layer1_neighbor_results.csv
+results/validation/layer2_results.csv
+results/validation/layer2_window_results.csv
+results/validation/layer3_results.csv
+results/validation/layer3_historical_stress_results.csv
+results/validation/layer3_synthetic_stress_results.csv
+results/validation/layer4_results.csv
+results/validation/layer4_permutation_results.parquet
+results/validation/layer4_bootstrap_results.parquet
+results/validation/final_funnel.csv
+results/validation/final_survivors.csv
 ```
 
 ### Report outputs
@@ -286,10 +286,10 @@ The factory was designed so adding a third family is cheap, but it still require
 2. Inherit from `BaseStrategy` in `src/factory/base.py`.
 3. Define `family_name`, `parameter_names`, and implement `generate_positions()`.
 4. Register the class in `src/factory/registry.py` so `create_strategy()` can instantiate it.
-5. Add the parameter grid in `config/strategies.yml` under a new family key.
+5. Declare `parameter_grid` and `enabled` as class attributes on the new strategy class, alongside `family_name` and `parameter_names`.
 6. Run `python scripts/run_pipeline.py` and confirm candidate generation plus all four layers execute.
 
-Important: Layer 1 neighbor robustness currently has family-specific parameter perturbation logic for `trend` and `mean_reversion` in `src/gate/layer1_oos.py`. When adding a new family, extend that branch so Layer 1 can generate valid neighbor candidates instead of raising an unsupported-family error.
+Important: Layer 1 neighbor robustness currently has family-specific parameter perturbation logic for `trend` and `mean_reversion` in `src/validation/layer1_oos.py`. When adding a new family, extend that branch so Layer 1 can generate valid neighbor candidates instead of raising an unsupported-family error.
 
 ## Run the notebook
 

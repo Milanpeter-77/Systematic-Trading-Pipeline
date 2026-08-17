@@ -237,11 +237,6 @@ def validate_and_clean_h1_data(
     cleaned = cleaned.set_index("timestamp")
     cleaned.index.name = "timestamp"
 
-    # An IBKR-returned hourly bar is a complete unit IBKR itself asserts
-    # represents that hour, unlike an M1-aggregated bar with partial
-    # minute coverage, so every surviving bar is treated as fully eligible.
-    cleaned["coverage_ratio"] = 1.0
-
     validation_report.update(cleaning_summary)
 
     return cleaned, validation_report

@@ -41,13 +41,13 @@ class SampleSplit:
         return cls(
             in_sample_start=pd.Timestamp(
                 sample_config["in_sample_start"]
-            ),
+            ).tz_localize("UTC"),
             in_sample_end=pd.Timestamp(
                 sample_config["in_sample_end"]
-            ),
+            ).tz_localize("UTC"),
             out_of_sample_start=pd.Timestamp(
                 sample_config["out_of_sample_start"]
-            ),
+            ).tz_localize("UTC"),
         )
 
     def validate(self) -> None:
@@ -538,8 +538,6 @@ def evaluate_neighbor_population(
     split: SampleSplit,
     perturbation: float,
     commission_bps_per_side: float,
-    minimum_signal_coverage: float,
-    minimum_fill_coverage: float,
 ) -> pd.DataFrame:
     """
     Backtest and evaluate all parameter neighbors in the OOS window.
@@ -557,12 +555,6 @@ def evaluate_neighbor_population(
             market_data=market_data,
             commission_bps_per_side=(
                 commission_bps_per_side
-            ),
-            minimum_signal_coverage=(
-                minimum_signal_coverage
-            ),
-            minimum_fill_coverage=(
-                minimum_fill_coverage
             ),
         )
 
@@ -622,8 +614,6 @@ def evaluate_layer1_candidate(
     split: SampleSplit,
     layer1_criteria: dict[str, Any],
     commission_bps_per_side: float = 0.5,
-    minimum_signal_coverage: float = 0.80,
-    minimum_fill_coverage: float = 0.80,
 ) -> tuple[
     dict[str, Any],
     pd.DataFrame,
@@ -672,12 +662,6 @@ def evaluate_layer1_candidate(
         ),
         commission_bps_per_side=(
             commission_bps_per_side
-        ),
-        minimum_signal_coverage=(
-            minimum_signal_coverage
-        ),
-        minimum_fill_coverage=(
-            minimum_fill_coverage
         ),
     )
 
@@ -728,8 +712,6 @@ def run_layer1_gate(
     sample_config: dict[str, Any],
     layer1_config: dict[str, Any],
     commission_bps_per_side: float = 0.5,
-    minimum_signal_coverage: float = 0.80,
-    minimum_fill_coverage: float = 0.80,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -759,12 +741,6 @@ def run_layer1_gate(
                 layer1_criteria=layer1_config,
                 commission_bps_per_side=(
                     commission_bps_per_side
-                ),
-                minimum_signal_coverage=(
-                    minimum_signal_coverage
-                ),
-                minimum_fill_coverage=(
-                    minimum_fill_coverage
                 ),
             )
         )

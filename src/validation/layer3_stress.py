@@ -204,10 +204,10 @@ def build_historical_stress_windows(
         stress_type="fixed_historical",
         start=pd.Timestamp(
             layer3_config["march_2020_start"]
-        ),
+        ).tz_localize("UTC"),
         end=pd.Timestamp(
             layer3_config["march_2020_end"]
-        ),
+        ).tz_localize("UTC"),
         market_return=None,
     )
 
@@ -313,10 +313,20 @@ def calculate_stress_metrics(
 def evaluate_historical_stress_window(
     result: BacktestResult,
     stress_window: StressWindow,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     """
     Evaluate one candidate inside one historical stress interval.
+
+    Returns None if the candidate's underlying data doesn't extend back to
+    this window at all -- e.g. a fixed window like March 2020 predating an
+    instrument's available history. That's a legitimate not-applicable
+    case, not a data-quality failure; data-driven windows (worst rolling
+    market windows) are always within range by construction and never hit
+    this path.
     """
+    if result.timeseries.index.min() > stress_window.end:
+        return None
+
     stress_data = slice_stress_window(
         timeseries=result.timeseries,
         stress_window=stress_window,
@@ -494,8 +504,10 @@ def evaluate_layer3_criteria(
         == "march_2020"
     ]
 
-    if len(march_rows) != 1:
-        failures.append("missing_march_2020")
+    if march_rows.empty:
+        # The candidate's instrument data doesn't extend back to March
+        # 2020 -- not applicable, not a failure (see
+        # evaluate_historical_stress_window()).
         march_return = np.nan
         march_drawdown = np.nan
     else:
@@ -688,11 +700,15 @@ def evaluate_layer3_candidate(
     )
 
     historical_records = [
-        evaluate_historical_stress_window(
-            result=result,
-            stress_window=stress_window,
-        )
+        record
         for stress_window in historical_windows
+        if (
+            record := evaluate_historical_stress_window(
+                result=result,
+                stress_window=stress_window,
+            )
+        )
+        is not None
     ]
 
     historical_results = pd.DataFrame(

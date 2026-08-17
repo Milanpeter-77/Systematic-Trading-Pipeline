@@ -31,18 +31,21 @@ XAUUSD:
   asset_class: "commodity"
   expected_session: "24/5"
 
-# UNCONFIRMED: SPXUSD was a broker-synthetic ticker with no unambiguous native
-# IBKR equivalent. IND contracts can't be traded and often only support daily
-# bars, not intraday. Test this one standalone (not as part of a multi-symbol
-# run) before trusting it. Alternatives if it fails: an SPX CFD (needs CFD
-# permissions) or SPY (stock_contract already works, proven on TRADES).
-SPXUSD:
-  sec_type: "IND"
-  ibkr_symbol: "SPX"
-  currency: "USD"
-  exchange: "CBOE"
-  what_to_show: "TRADES"
-  use_regular_trading_hours: true
-  tick_size: 0.01
-  asset_class: "equity_index"
-  expected_session: "broker_defined"
+# DISABLED: confirmed blocked, not just unconfirmed. Standalone testing showed
+# both SPXUSD (IND) and its SPY (STK) fallback fail identically with IBKR
+# error 2188 ("Up-to-the-second historical data requires additional
+# subscription for the API") -- this account has no US equities/index
+# market-data subscription at all, so swapping tickers won't help. XAUUSD
+# (commodity) fetches fine, confirming this is subscription-specific, not a
+# broader connectivity issue. Re-enable once a US market-data subscription is
+# added to the IBKR account.
+# SPXUSD:
+#   sec_type: "IND"
+#   ibkr_symbol: "SPX"
+#   currency: "USD"
+#   exchange: "CBOE"
+#   what_to_show: "TRADES"
+#   use_regular_trading_hours: true
+#   tick_size: 0.01
+#   asset_class: "equity_index"
+#   expected_session: "broker_defined"

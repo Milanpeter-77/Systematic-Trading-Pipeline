@@ -9,10 +9,11 @@ import pandas as pd
 
 from src.data.ibkr.historical import HistoricalDataClient
 from src.data.retrieval import (
+    DEFAULT_BACKFILL_START,
     DEFAULT_CLIENT_ID,
     DEFAULT_HOST,
     DEFAULT_PORT,
-    fetch_all_instruments,
+    fetch_all_instruments_backfill,
     load_instrument_config,
 )
 from src.data.validation import validate_and_clean_h1_data
@@ -28,21 +29,13 @@ PROCESSED_DATA_DIRECTORY = PROJECT_ROOT / "data" / "processed"
 QUALITY_RESULTS_DIRECTORY = PROJECT_ROOT / "results" / "data_quality"
 INSTRUMENT_CONFIG_PATH = PROJECT_ROOT / "config" / "instruments.yml"
 
-# ----------------------------------------------------------------------
-# IBKR market-data fetch settings.
-#
-# fetch_instrument_history() makes ONE bounded IBKR historical-data
-# request per symbol -- there is intentionally no multi-year chunked
-# backfill (out of scope for now). config/validation.yml's sample
-# section (in_sample_start=2020-01-01 .. out_of_sample_start=2024-01-01,
-# plus Layer 2's 104-week walk-forward training windows) needs several
-# YEARS of H1 history to actually pass. A short duration below is fine
-# for smoke-testing this pipeline (fetch -> validate -> save) in
-# isolation; the alpha factory's Layer 1-4 validation-gate stages WILL
-# fail against too-short a history. Widen this once ready to run the
-# full gate (watch for IBKR pacing limits on a single large request).
-# ----------------------------------------------------------------------
-MARKET_DATA_FETCH_DURATION = "5 D"  # SMOKE-TEST VALUE -- widen before a real gate run
+# config/validation.yml's sample section (in_sample_start=2020-01-01 ..
+# out_of_sample_start=2024-01-01, plus Layer 2's 104-week walk-forward
+# training windows) needs several YEARS of H1 history to actually pass.
+# fetch_all_instruments_backfill() walks backward from now in chunks to
+# cover that (see src.data.retrieval), respecting IBKR's per-request
+# pacing/bar-count guidance rather than one unbounded request.
+MARKET_DATA_BACKFILL_START = DEFAULT_BACKFILL_START
 IBKR_HOST = DEFAULT_HOST
 IBKR_PORT = DEFAULT_PORT
 IBKR_CLIENT_ID = DEFAULT_CLIENT_ID
@@ -112,14 +105,14 @@ def process_instrument(
 
 
 def prepare_all_data(
-    duration: str = MARKET_DATA_FETCH_DURATION,
+    start: str = MARKET_DATA_BACKFILL_START,
     save_output: bool = True,
 ) -> tuple[
     dict[str, pd.DataFrame],
     pd.DataFrame,
 ]:
     """
-    Connect to IBKR, fetch, validate, clean, and save every configured instrument.
+    Connect to IBKR, backfill, validate, clean, and save every configured instrument.
 
     The IBKR client connection is self-contained here: connect, fetch every
     symbol, disconnect -- nothing downstream needs IBKR awareness.
@@ -142,10 +135,10 @@ def prepare_all_data(
             client_id=IBKR_CLIENT_ID,
         )
 
-        raw_data = fetch_all_instruments(
+        raw_data = fetch_all_instruments_backfill(
             client=client,
             instrument_config=instrument_config,
-            duration=duration,
+            start=start,
             save_output=save_output,
         )
     finally:

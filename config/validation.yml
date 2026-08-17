@@ -14,10 +14,6 @@ strategies:
 
 data_quality:
   timeframe: "1h"
-  minimum_signal_bar_coverage: 0.80
-  retain_low_coverage_bars: true
-  allow_new_signal_on_low_coverage_bar: false
-  allow_fill_on_low_coverage_bar: false
 
 spread_cleaning:
   treat_nonpositive_spread_as_missing: true
@@ -29,8 +25,6 @@ spread_cleaning:
 backtest:
   return_convention: "open_to_open"
   execution_delay_bars: 1
-  minimum_signal_bar_coverage: 0.80
-  minimum_fill_bar_coverage: 0.80
   commission_bps_per_side: 0.50
   initial_position: 0
   annualization_hours: 8760

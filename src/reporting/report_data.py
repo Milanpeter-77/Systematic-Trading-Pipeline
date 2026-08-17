@@ -29,8 +29,8 @@ def load_report_data(
         project_root / "results" / "backtests"
     )
 
-    gate_directory = (
-        project_root / "results" / "gate"
+    validation_directory = (
+        project_root / "results" / "validation"
     )
 
     required_paths = {
@@ -39,27 +39,27 @@ def load_report_data(
             / "candidate_metrics.csv"
         ),
         "layer1_results": (
-            gate_directory
+            validation_directory
             / "layer1_results.csv"
         ),
         "layer2_results": (
-            gate_directory
+            validation_directory
             / "layer2_results.csv"
         ),
         "layer3_results": (
-            gate_directory
+            validation_directory
             / "layer3_results.csv"
         ),
         "layer4_results": (
-            gate_directory
+            validation_directory
             / "layer4_results.csv"
         ),
         "final_funnel": (
-            gate_directory
+            validation_directory
             / "final_funnel.csv"
         ),
         "final_survivors": (
-            gate_directory
+            validation_directory
             / "final_survivors.csv"
         ),
     }

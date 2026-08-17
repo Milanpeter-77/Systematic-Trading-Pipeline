@@ -23,6 +23,7 @@ class HistoricalRequest:
     bar_size: str
     what_to_show: str = "TRADES"
     use_regular_trading_hours: bool = True
+    end_date_time: str = ""
 
 
 class HistoricalDataClient(EWrapper, EClient):
@@ -140,7 +141,7 @@ class HistoricalDataClient(EWrapper, EClient):
         self.reqHistoricalData(
             reqId=request.request_id,
             contract=contract,
-            endDateTime="",
+            endDateTime=request.end_date_time,
             durationStr=request.duration,
             barSizeSetting=request.bar_size,
             whatToShow=request.what_to_show,
@@ -152,6 +153,15 @@ class HistoricalDataClient(EWrapper, EClient):
 
         if not self._historical_complete_event.wait(timeout=timeout):
             self.cancelHistoricalData(request.request_id)
+
+            # Some IBKR errors (e.g. code 162, "no data" for the requested
+            # window) never trigger historicalDataEnd, so the wait above
+            # always times out even though the real reason already arrived
+            # via error(). Surface it instead of a bare, uninformative
+            # TimeoutError if one was received.
+            if self._errors:
+                raise RuntimeError(f"IBKR request failed: {self._errors}")
+
             raise TimeoutError("Historical-data request timed out.")
 
         if self._errors:

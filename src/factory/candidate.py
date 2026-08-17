@@ -56,15 +56,15 @@ def candidate_from_record(record: dict[str, Any]) -> CandidateSpec:
     Reconstruct one CandidateSpec from a candidate-table record.
 
     Shared by the alpha factory (reconstructing candidates from
-    results/candidates.csv or an in-memory candidate frame) and, eventually,
-    the execution package (reconstructing a promoted candidate from
-    config/deployed_strategies.yml). The record must contain only
-    candidate_id/family/symbol/parameter columns -- results/gate/
+    results/candidates/<family>.csv or an in-memory candidate frame) and,
+    eventually, the execution package (reconstructing a promoted candidate
+    from config/strategies.yml). The record must contain only
+    candidate_id/family/symbol/parameter columns -- results/validation/
     final_survivors.csv also carries ~50 extra metric/pass-flag columns
     (layer1_pass, oos_net_sharpe, etc.) that this function would otherwise
     misinterpret as strategy parameters, so reconstruction should look up
-    each candidate's row in results/candidates.csv instead, and use
-    final_survivors.csv only to confirm gate-pass membership.
+    each candidate's row in results/candidates/<family>.csv instead, and
+    use final_survivors.csv only to confirm gate-pass membership.
     """
     parameters = {
         key: value

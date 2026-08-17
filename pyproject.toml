@@ -15,7 +15,7 @@ dependencies = [
     "pyyaml",
     "pyarrow",
     "scipy",
-    "ibapi",
+    "ibapi==10.45.1",
     "protobuf",
 ]
 

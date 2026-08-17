@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Type
 
 from src.strategies.base import BaseStrategy
-from src.strategies.mean_reversion import (
+from src.strategies.mean_reversion.zscore import (
     MeanReversionStrategy,
 )
-from src.strategies.trend import TrendStrategy
+from src.strategies.trend_following.ema_crossover import TrendStrategy
 
 
 STRATEGY_REGISTRY: dict[str, Type[BaseStrategy]] = {
