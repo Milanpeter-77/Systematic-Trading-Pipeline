@@ -1,3 +1,5 @@
+# FX
+
 USDJPY:
   sec_type: "CASH"
   ibkr_symbol: "USD"          # CASH convention: symbol = base currency
@@ -9,16 +11,40 @@ USDJPY:
   asset_class: "fx"
   expected_session: "24/5"
 
-ETHUSD:
-  sec_type: "CRYPTO"
-  ibkr_symbol: "ETH"
+EURUSD:
+  sec_type: "CASH"
+  ibkr_symbol: "EUR"
   currency: "USD"
-  exchange: "PAXOS"
-  what_to_show: "AGGTRADES"
+  exchange: "IDEALPRO"
+  what_to_show: "MIDPOINT"
   use_regular_trading_hours: false
   tick_size: 0.001
-  asset_class: "crypto"
-  expected_session: "24/7"
+  asset_class: "fx"
+  expected_session: "24/5"
+
+GBPUSD:
+  sec_type: "CASH"
+  ibkr_symbol: "GBP"
+  currency: "USD"
+  exchange: "IDEALPRO"
+  what_to_show: "MIDPOINT"
+  use_regular_trading_hours: false
+  tick_size: 0.001
+  asset_class: "fx"
+  expected_session: "24/5"
+
+AUDUSD:
+  sec_type: "CASH"
+  ibkr_symbol: "AUD"
+  currency: "USD"
+  exchange: "IDEALPRO"
+  what_to_show: "MIDPOINT"
+  use_regular_trading_hours: false
+  tick_size: 0.001
+  asset_class: "fx"
+  expected_session: "24/5"
+
+# Commodities
 
 XAUUSD:
   sec_type: "CMDTY"
@@ -31,14 +57,72 @@ XAUUSD:
   asset_class: "commodity"
   expected_session: "24/5"
 
-# DISABLED: confirmed blocked, not just unconfirmed. Standalone testing showed
-# both SPXUSD (IND) and its SPY (STK) fallback fail identically with IBKR
+XAGUSD:
+  sec_type: "CMDTY"
+  ibkr_symbol: "XAGUSD"
+  currency: "USD"
+  exchange: "SMART"
+  what_to_show: "MIDPOINT"     # spot metals have no consolidated trade tape either
+  use_regular_trading_hours: false
+  tick_size: 0.001
+  asset_class: "commodity"
+  expected_session: "24/5"
+
+# Equities
+
+VOD:
+  sec_type: "STK"
+  ibkr_symbol: "VOD"
+  currency: "GBP"
+  exchange: "SMART"
+  what_to_show: "TRADES"
+  use_regular_trading_hours: true
+  tick_size: 0.01
+  asset_class: "equity"
+  expected_session: "broker_defined"
+
+SAP:
+  sec_type: "STK"
+  ibkr_symbol: "SAP"
+  currency: "EUR"
+  exchange: "SMART"
+  what_to_show: "TRADES"
+  use_regular_trading_hours: true
+  tick_size: 0.01
+  asset_class: "equity"
+  expected_session: "broker_defined"
+
+# DISABLED: every entry below was empirically confirmed blocked via
+# tests/integration/test_ibkr_subscriptions.py (its "deep dive" section
+# specifically isolates *why*, not just *whether*, each fails). Re-run that
+# script to confirm before re-enabling anything here -- account-level data
+# entitlements have already shifted once mid-investigation (see below).
+#
+# AAPL (STK, US) and DAX (IND, Germany/EUREX): both reliably fail with
 # error 2188 ("Up-to-the-second historical data requires additional
-# subscription for the API") -- this account has no US equities/index
-# market-data subscription at all, so swapping tickers won't help. XAUUSD
-# (commodity) fetches fine, confirming this is subscription-specific, not a
-# broader connectivity issue. Re-enable once a US market-data subscription is
-# added to the IBKR account.
+# subscription for the API"). This is NOT literally about "up-to-the-second"
+# timing -- the deep dive tried delayed-type + blank endDateTime, live-type +
+# a fixed past endDateTime, and delayed-type + a fixed past endDateTime, and
+# all three failed identically. A direct reqMktData streaming probe on AAPL
+# made the real cause explicit: error 10089, "Requested market data requires
+# additional subscription for API ... Delayed market data is available."
+# I.e. the API layer needs its own paid live-data entitlement, separate from
+# whatever grants delayed/TWS-UI viewing access -- and even delayed data
+# didn't unlock reqHistoricalData for this contract. Meanwhile VOD and SAP
+# (also STK, non-US) fetch fine, so this is not a blanket STK/IND ban --
+# it's entitlement-specific per symbol/exchange (DAX likely needs its own
+# separate index-value-bundle subscription on top of underlying-equity
+# access, since SAP works but DAX doesn't on the same Xetra/EUREX market).
+#
+# ETHUSD and BTCUSD (CRYPTO, PAXOS): both fail with a distinct, specific
+# error -- "No market data permissions for PAXOS CRYPTO" -- confirmed
+# reproducible on both symbols, so this is a venue-level (PAXOS) permission
+# gap, not symbol-specific. Notably ETHUSD was an active, previously-working
+# instrument before this investigation; something has since changed on the
+# account's crypto market-data entitlement (or it was already lapsed and
+# simply hadn't been re-tested). Needs checking directly on the IBKR account
+# (Market Data Subscriptions) before either symbol can be re-enabled.
+#
 # SPXUSD:
 #   sec_type: "IND"
 #   ibkr_symbol: "SPX"
@@ -49,3 +133,47 @@ XAUUSD:
 #   tick_size: 0.01
 #   asset_class: "equity_index"
 #   expected_session: "broker_defined"
+
+# DAX:
+#   sec_type: "IND"
+#   ibkr_symbol: "DAX"
+#   currency: "EUR"
+#   exchange: "EUREX"
+#   what_to_show: "TRADES"
+#   use_regular_trading_hours: true
+#   tick_size: 0.01
+#   asset_class: "equity_index"
+#   expected_session: "broker_defined"
+
+# AAPL:
+#   sec_type: "STK"
+#   ibkr_symbol: "AAPL"
+#   currency: "USD"
+#   exchange: "SMART"
+#   what_to_show: "TRADES"
+#   use_regular_trading_hours: true
+#   tick_size: 0.01
+#   asset_class: "equity"
+#   expected_session: "broker_defined"
+
+# ETHUSD:
+#   sec_type: "CRYPTO"
+#   ibkr_symbol: "ETH"
+#   currency: "USD"
+#   exchange: "PAXOS"
+#   what_to_show: "AGGTRADES"
+#   use_regular_trading_hours: false
+#   tick_size: 0.001
+#   asset_class: "crypto"
+#   expected_session: "24/7"
+
+# BTCUSD:
+#   sec_type: "CRYPTO"
+#   ibkr_symbol: "BTC"
+#   currency: "USD"
+#   exchange: "PAXOS"
+#   what_to_show: "AGGTRADES"
+#   use_regular_trading_hours: false
+#   tick_size: 0.001
+#   asset_class: "crypto"
+#   expected_session: "24/7"

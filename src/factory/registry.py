@@ -6,12 +6,16 @@ from src.strategies.base import BaseStrategy
 from src.strategies.mean_reversion.zscore import (
     MeanReversionStrategy,
 )
+from src.strategies.momentum.time_series import MomentumStrategy
 from src.strategies.trend_following.ema_crossover import TrendStrategy
+from src.strategies.volatility.breakout import VolatilityBreakoutStrategy
 
 
 STRATEGY_REGISTRY: dict[str, Type[BaseStrategy]] = {
     TrendStrategy.family_name: TrendStrategy,
     MeanReversionStrategy.family_name: MeanReversionStrategy,
+    MomentumStrategy.family_name: MomentumStrategy,
+    VolatilityBreakoutStrategy.family_name: VolatilityBreakoutStrategy,
 }
 
 

@@ -1,5 +1,5 @@
 layer,independent_passes,independent_failures,independent_pass_rate
-Layer 1,8,28,0.2222222222222222
-Layer 2,8,28,0.2222222222222222
-Layer 3,12,24,0.3333333333333333
-Layer 4,0,36,0.0
+Layer 1,27,165,0.140625
+Layer 2,27,165,0.140625
+Layer 3,71,121,0.3697916666666667
+Layer 4,0,192,0.0

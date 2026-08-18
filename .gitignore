@@ -48,3 +48,6 @@ data/raw/*
 !data/raw/README.md
 
 *.parquet
+
+# Todo file
+\#todo.md

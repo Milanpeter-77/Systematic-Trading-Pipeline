@@ -188,9 +188,12 @@ def calculate_window_metrics(
 
     window_start = window_data.index.min()
 
-    trades_for_count = trades.loc[
-        trades["entry_timestamp"] >= window_start
-    ].copy()
+    if trades.empty:
+        trades_for_count = trades
+    else:
+        trades_for_count = trades.loc[
+            trades["entry_timestamp"] >= window_start
+        ].copy()
 
     metrics.update(
         {
@@ -366,6 +369,26 @@ def generate_parameter_neighbors(
                 ),
                 "entry_z": float(
                     parameters["entry_z"]
+                ),
+            }
+
+        elif candidate.family == "momentum":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "volatility":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "num_std": float(
+                    parameters["num_std"]
                 ),
             }
 

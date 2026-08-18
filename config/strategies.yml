@@ -22,5 +22,5 @@
 # ---------------------------------------------------------------------------
 
 deployed_strategies: []
-  # - "trend__XAUUSD__fast_window-12__slow_window-120"
+  # - "volatility__USDJPY__num_std-2.5__window-20"
   # - "mean_reversion__SPXUSD__entry_z-2__lookback-48"
