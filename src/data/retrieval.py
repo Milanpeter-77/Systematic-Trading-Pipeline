@@ -27,9 +27,21 @@ DEFAULT_BAR_SIZE = "1 hour"
 DEFAULT_DURATION = "1 Y"
 
 # Matches config/validation.yml's sample.in_sample_start -- the earliest
-# history the validation gate actually needs.
+# history the validation gate actually needs. Only used as a floor/fallback
+# now: fetch_all_instruments_backfill() auto-detects per instrument whether
+# a full backfill from this date or a small incremental top-up is needed,
+# so the same call is safe to make on every scheduled run (e.g. hourly).
 DEFAULT_BACKFILL_START = "2020-01-01"
 DEFAULT_BACKFILL_CHUNK_DURATION = "6 M"
+
+# Safety margin subtracted from an instrument's latest saved bar before an
+# incremental fetch, so a missed run (weekend, brief outage) can't silently
+# skip a bar. A small chunk_duration is used for incremental fetches (as
+# opposed to DEFAULT_BACKFILL_CHUNK_DURATION's 6-month chunks meant for a
+# multi-year backfill) since the requested window is normally just this
+# margin plus however long since the last run -- comfortably one chunk.
+DEFAULT_INCREMENTAL_OVERLAP_HOURS = 72.0
+DEFAULT_INCREMENTAL_CHUNK_DURATION = "1 W"
 
 REQUIRED_INSTRUMENT_KEYS = {
     "sec_type",
@@ -332,12 +344,27 @@ def fetch_all_instruments_backfill(
     instrument_config: dict[str, dict[str, Any]],
     start: str | pd.Timestamp = DEFAULT_BACKFILL_START,
     save_output: bool = True,
+    overlap_hours: float = DEFAULT_INCREMENTAL_OVERLAP_HOURS,
 ) -> dict[str, pd.DataFrame]:
     """
-    Backfill continuous historical bars (price + spread) for every
-    configured instrument.
+    Fetch continuous historical bars (price + spread) for every configured
+    instrument, auto-detecting per instrument whether a full backfill or an
+    incremental top-up is needed.
+
+    If data/raw/ibkr/{symbol}_H1.parquet already exists, only bars from
+    `overlap_hours` before its latest saved timestamp onward are fetched
+    (using a small chunk_duration, since that window is normally tiny) and
+    merged into the existing series. Otherwise the full range from `start`
+    is fetched, as a from-scratch backfill would be. This makes it safe to
+    call this same function on every scheduled run (e.g. hourly) without
+    re-pulling the whole history each time -- a newly added instrument with
+    no saved data yet still gets its full history on the next run.
     """
     results: dict[str, pd.DataFrame] = {}
+
+    floor_start = pd.Timestamp(start)
+    if floor_start.tzinfo is None:
+        floor_start = floor_start.tz_localize("UTC")
 
     if save_output:
         RAW_IBKR_DIRECTORY.mkdir(parents=True, exist_ok=True)
@@ -345,23 +372,49 @@ def fetch_all_instruments_backfill(
     for index, (symbol, settings) in enumerate(
         instrument_config.items()
     ):
-        logger.info(f"Backfilling {symbol} from IBKR (from {start})...")
+        raw_path = RAW_IBKR_DIRECTORY / f"{symbol}_H1.parquet"
+
+        existing_bars: pd.DataFrame | None = None
+        symbol_start = floor_start
+        chunk_duration = DEFAULT_BACKFILL_CHUNK_DURATION
+
+        if raw_path.exists():
+            existing_bars = pd.read_parquet(raw_path)
+
+            if not existing_bars.empty:
+                last_timestamp = pd.Timestamp(
+                    existing_bars["timestamp"].max()
+                )
+
+                if last_timestamp.tzinfo is None:
+                    last_timestamp = last_timestamp.tz_localize("UTC")
+
+                incremental_start = last_timestamp - pd.Timedelta(
+                    hours=overlap_hours
+                )
+
+                symbol_start = max(floor_start, incremental_start)
+                chunk_duration = DEFAULT_INCREMENTAL_CHUNK_DURATION
+
+        logger.info(f"Fetching {symbol} from IBKR (from {symbol_start})...")
 
         price_bars = fetch_instrument_history_backfill(
             client=client,
             symbol=symbol,
             instrument_config=settings,
-            start=start,
+            start=symbol_start,
+            chunk_duration=chunk_duration,
             request_id_start=1001 + index * 100,
         )
 
-        logger.info(f"Backfilling {symbol} BID_ASK spread from IBKR...")
+        logger.info(f"Fetching {symbol} BID_ASK spread from IBKR...")
 
         bid_ask_bars = fetch_instrument_history_backfill(
             client=client,
             symbol=symbol,
             instrument_config=settings,
-            start=start,
+            start=symbol_start,
+            chunk_duration=chunk_duration,
             request_id_start=5001 + index * 100,
             what_to_show="BID_ASK",
         )
@@ -374,16 +427,34 @@ def fetch_all_instruments_backfill(
             how="inner",
         )
 
+        if existing_bars is not None and not existing_bars.empty:
+            bars = (
+                pd.concat([existing_bars, bars], ignore_index=True)
+                .sort_values("timestamp")
+                .drop_duplicates(subset=["timestamp"], keep="last")
+                .reset_index(drop=True)
+            )
+
+            # Parquet round-tripping and a fresh IBKR fetch can disagree on
+            # datetime64 unit (e.g. microsecond vs. second precision) --
+            # concatenating mismatched units silently degrades the column
+            # to `object` dtype, which breaks any later `.dt` accessor use
+            # (downstream data-quality checks in src.data.validation rely
+            # on it). Force a single, consistent dtype after every merge.
+            bars["timestamp"] = pd.to_datetime(
+                bars["timestamp"], utc=True
+            )
+
         results[symbol] = bars
 
         logger.info(
-            f"Backfilled {symbol}: {len(bars):,} bars, "
+            f"{symbol}: {len(bars):,} bars total, "
             f"{bars['timestamp'].min()} to {bars['timestamp'].max()}"
         )
 
         if save_output:
             bars.to_parquet(
-                RAW_IBKR_DIRECTORY / f"{symbol}_H1.parquet",
+                raw_path,
                 index=False,
             )
 

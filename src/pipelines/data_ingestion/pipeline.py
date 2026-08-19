@@ -32,9 +32,13 @@ INSTRUMENT_CONFIG_PATH = PROJECT_ROOT / "config" / "instruments.yml"
 # config/validation.yml's sample section (in_sample_start=2020-01-01 ..
 # out_of_sample_start=2024-01-01, plus Layer 2's 104-week walk-forward
 # training windows) needs several YEARS of H1 history to actually pass.
-# fetch_all_instruments_backfill() walks backward from now in chunks to
-# cover that (see src.data.retrieval), respecting IBKR's per-request
-# pacing/bar-count guidance rather than one unbounded request.
+# This is only a floor/fallback now, used for an instrument with no saved
+# data yet -- fetch_all_instruments_backfill() auto-detects per instrument
+# whether that full backfill or a small incremental top-up is needed (see
+# src.data.retrieval), so prepare_all_data() is safe to call on every
+# scheduled run (e.g. hourly) without re-pulling the whole history each
+# time, and respects IBKR's per-request pacing/bar-count guidance either
+# way rather than one unbounded request.
 MARKET_DATA_BACKFILL_START = DEFAULT_BACKFILL_START
 IBKR_HOST = DEFAULT_HOST
 IBKR_PORT = DEFAULT_PORT
@@ -112,7 +116,9 @@ def prepare_all_data(
     pd.DataFrame,
 ]:
     """
-    Connect to IBKR, backfill, validate, clean, and save every configured instrument.
+    Connect to IBKR, fetch, validate, clean, and save every configured
+    instrument -- a full backfill for one with no saved data yet, a small
+    incremental top-up otherwise (see fetch_all_instruments_backfill).
 
     The IBKR client connection is self-contained here: connect, fetch every
     symbol, disconnect -- nothing downstream needs IBKR awareness.

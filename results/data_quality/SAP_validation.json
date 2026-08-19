@@ -4,9 +4,9 @@
   "expected_session": "broker_defined",
   "tick_size": 0.01,
   "symbol": "SAP",
-  "row_count": 15168,
+  "row_count": 15174,
   "start_timestamp": "2020-01-02T08:00:00+00:00",
-  "end_timestamp": "2026-08-18T09:00:00+00:00",
+  "end_timestamp": "2026-08-18T15:00:00+00:00",
   "invalid_timestamp_count": 0,
   "duplicate_timestamp_rows": 0,
   "missing_required_value_count": 0,
@@ -18,5 +18,5 @@
   "largest_time_gap_minutes": 8160.0,
   "removed_invalid_rows": 0,
   "duplicate_rows_identified": 0,
-  "rows_after_cleaning": 15168
+  "rows_after_cleaning": 15174
 }
