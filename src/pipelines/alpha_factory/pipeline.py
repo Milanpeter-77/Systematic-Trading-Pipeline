@@ -9,6 +9,10 @@ import pandas as pd
 
 from src.backtest.engine import run_candidate_backtest
 from src.backtest.result import BacktestResult
+from src.data.features.statistical import (
+    compute_pair_spread,
+    screen_cointegrated_pairs,
+)
 from src.data.retrieval import load_instrument_config
 from src.factory.candidate import candidate_from_record
 from src.factory.generator import (
@@ -43,7 +47,110 @@ INSTRUMENT_CONFIG_PATH = PROJECT_ROOT / "config" / "instruments.yml"
 VALIDATION_CONFIG_PATH = PROJECT_ROOT / "config" / "validation.yml"
 
 
+def prepare_pair_features(
+    save_output: bool = True,
+) -> list[str]:
+    """
+    Screen the active instrument universe for cointegrated pairs and save
+    each retained pair's spread as a synthetic pseudo-instrument.
+
+    stat_arb needs a symbol universe of its own (a pair spread, not a
+    single tradable instrument) -- this gives it one, computed fresh from
+    whatever real instrument data is currently in data/processed/. See
+    src.data.features.statistical for the actual screening/spread math;
+    this only orchestrates loading input and saving output, matching how
+    prepare_all_data()/process_instrument() split those concerns for the
+    data-ingestion pipeline.
+    """
+    instrument_config = load_instrument_config(
+        config_path=INSTRUMENT_CONFIG_PATH
+    )
+
+    processed_data = {
+        symbol: pd.read_parquet(
+            PROCESSED_DATA_DIRECTORY / f"{symbol}_H1.parquet"
+        )
+        for symbol in instrument_config
+    }
+
+    pairs = screen_cointegrated_pairs(processed_data)
+
+    pair_symbols: list[str] = []
+
+    if save_output:
+        PROCESSED_DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
+
+    for symbol_a, symbol_b in pairs:
+        pair_symbol = f"{symbol_a}_{symbol_b}"
+        pair_symbols.append(pair_symbol)
+
+        spread, hedge_ratio = compute_pair_spread(
+            processed_data[symbol_a]["close"],
+            processed_data[symbol_b]["close"],
+        )
+
+        # Trading the spread means trading both legs, so both legs' own
+        # bid-ask cost are real costs -- combine them, weighting leg B by
+        # the hedge ratio (the position size actually taken in it per
+        # unit of leg A) rather than treating the pair as spread-free.
+        combined_spread_fraction = (
+            processed_data[symbol_a]["fill_spread_fraction"]
+            + abs(hedge_ratio) * processed_data[symbol_b]["fill_spread_fraction"]
+        ).reindex(spread.index)
+
+        # The backtest engine computes returns as next_open/open - 1 (a
+        # price-percentage convention) -- that blows up (division by
+        # ~zero) whenever a raw spread crosses zero while a position is
+        # held, which a mean-reverting spread does by construction. Shift
+        # by a constant to keep it safely positive: this doesn't change
+        # the strategy's own z-score signal at all (close - rolling_mean
+        # is invariant to a constant shift, since both shift together),
+        # it only keeps the return engine's price-ratio math well-defined.
+        price_like_spread = spread - spread.min() + spread.std()
+
+        pair_frame = pd.DataFrame(
+            {
+                "open": price_like_spread,
+                "high": price_like_spread,
+                "low": price_like_spread,
+                "close": price_like_spread,
+                "fill_spread_fraction": combined_spread_fraction,
+            }
+        )
+        pair_frame.index.name = "timestamp"
+
+        if save_output:
+            pair_frame.to_parquet(
+                PROCESSED_DATA_DIRECTORY / f"{pair_symbol}_H1.parquet"
+            )
+
+    return pair_symbols
+
+
+def load_all_processed_data(
+    pair_symbols: list[str] | None = None,
+) -> dict[str, pd.DataFrame]:
+    """
+    Load every real instrument's processed data plus any pair-spread
+    pseudo-instruments (see prepare_pair_features) into one dict, keyed by
+    symbol the same way real instruments already are.
+    """
+    instrument_config = load_instrument_config(
+        config_path=INSTRUMENT_CONFIG_PATH
+    )
+
+    symbols = list(instrument_config) + list(pair_symbols or [])
+
+    return {
+        symbol: pd.read_parquet(
+            PROCESSED_DATA_DIRECTORY / f"{symbol}_H1.parquet"
+        )
+        for symbol in symbols
+    }
+
+
 def build_candidate_population(
+    pair_symbols: list[str] | None = None,
     save_output: bool = True,
 ) -> pd.DataFrame:
     """
@@ -55,10 +162,29 @@ def build_candidate_population(
         )
     )
 
+    # carry only has an interest_rate_differential column (added during
+    # ingestion, see add_interest_rate_differential) for CASH/FX
+    # instruments -- every other family, plus stat_arb's pair-spread
+    # pseudo-instruments, keeps its own separate symbol universe.
+    fx_symbols = [
+        symbol
+        for symbol, settings in instrument_config.items()
+        if settings["sec_type"] == "CASH"
+    ]
+
+    family_symbol_overrides: dict[str, list[str]] = {}
+
+    if fx_symbols:
+        family_symbol_overrides["carry"] = fx_symbols
+
+    if pair_symbols:
+        family_symbol_overrides["stat_arb"] = pair_symbols
+
     candidates = generate_candidates(
         symbols=list(
             instrument_config
         ),
+        family_symbol_overrides=family_symbol_overrides or None,
     )
 
     candidates_frame = (
@@ -103,6 +229,7 @@ def run_all_candidate_backtests(
         pd.DataFrame,
     ] | None = None,
     candidate_frame: pd.DataFrame | None = None,
+    pair_symbols: list[str] | None = None,
     save_output: bool = True,
 ) -> tuple[
     pd.DataFrame,
@@ -112,24 +239,13 @@ def run_all_candidate_backtests(
     Backtest the complete official candidate population.
     """
     if processed_data is None:
-        instrument_config = (
-            load_instrument_config(
-                config_path=INSTRUMENT_CONFIG_PATH
-            )
-        )
-
-        processed_data = {
-            symbol: pd.read_parquet(
-                PROCESSED_DATA_DIRECTORY
-                / f"{symbol}_H1.parquet"
-            )
-            for symbol in instrument_config
-        }
+        processed_data = load_all_processed_data(pair_symbols)
 
     if candidate_frame is None:
         candidate_frame = (
             build_candidate_population(
-                save_output=save_output
+                pair_symbols=pair_symbols,
+                save_output=save_output,
             )
         )
 
@@ -809,13 +925,25 @@ def run_alpha_factory() -> None:
     logger.info("=" * 72)
 
     # ======================================================================
-    # STAGE 1/5 -- STRATEGY CANDIDATE GENERATION
+    # STAGE 1/6 -- FEATURE ENGINEERING (cointegrated-pair screening)
     # ======================================================================
-    logger.info("[1/5] Generating strategy candidates...")
+    logger.info("[1/6] Screening for cointegrated pairs...")
+
+    pair_symbols = prepare_pair_features(save_output=True)
+
+    logger.info(
+        f"Found {len(pair_symbols)} cointegrated pair(s): {pair_symbols}"
+    )
+
+    # ======================================================================
+    # STAGE 2/6 -- STRATEGY CANDIDATE GENERATION
+    # ======================================================================
+    logger.info("[2/6] Generating strategy candidates...")
 
     candidate_population = (
         build_candidate_population(
-            save_output=True
+            pair_symbols=pair_symbols,
+            save_output=True,
         )
     )
 
@@ -826,12 +954,12 @@ def run_alpha_factory() -> None:
     )
 
     # ======================================================================
-    # STAGE 2/5 -- CANDIDATE BACKTESTS
+    # STAGE 3/6 -- CANDIDATE BACKTESTS
     # Reloads processed data from disk (data/processed/*.parquet, produced
-    # by the data-ingestion pipeline) since it is no longer fetched
-    # in-process here.
+    # by the data-ingestion pipeline plus the pair spreads saved above)
+    # since it is no longer fetched in-process here.
     # ======================================================================
-    logger.info("[2/5] Running candidate backtests...")
+    logger.info("[3/6] Running candidate backtests...")
 
     (
         candidate_metrics,
@@ -839,6 +967,7 @@ def run_alpha_factory() -> None:
     ) = run_all_candidate_backtests(
         processed_data=None,
         candidate_frame=candidate_population,
+        pair_symbols=pair_symbols,
         save_output=True,
     )
 
@@ -849,22 +978,12 @@ def run_alpha_factory() -> None:
     )
 
     # ======================================================================
-    # STAGE 3/5 -- LAYER 1-4 VALIDATION
+    # STAGE 4/6 -- LAYER 1-4 VALIDATION
     # ======================================================================
-    instrument_config = load_instrument_config(
-        config_path=INSTRUMENT_CONFIG_PATH
-    )
-
-    processed_data = {
-        symbol: pd.read_parquet(
-            PROCESSED_DATA_DIRECTORY
-            / f"{symbol}_H1.parquet"
-        )
-        for symbol in instrument_config
-    }
+    processed_data = load_all_processed_data(pair_symbols)
 
     logger.info(
-        "[3/5] Running Layer 1: "
+        "[4/6] Running Layer 1: "
         "OOS and parameter sensitivity..."
     )
 
@@ -941,9 +1060,9 @@ def run_alpha_factory() -> None:
     )
 
     # ======================================================================
-    # STAGE 4/5 -- FINAL FUNNEL
+    # STAGE 5/6 -- FINAL FUNNEL
     # ======================================================================
-    logger.info("[4/5] Building final funnel...")
+    logger.info("[5/6] Building final funnel...")
 
     (
         final_funnel,
@@ -958,9 +1077,9 @@ def run_alpha_factory() -> None:
     )
 
     # ======================================================================
-    # STAGE 5/5 -- REPORTING OUTPUTS
+    # STAGE 6/6 -- REPORTING OUTPUTS
     # ======================================================================
-    logger.info("[5/5] Building reporting outputs...")
+    logger.info("[6/6] Building reporting outputs...")
 
     reporting_outputs = (
         build_reporting_outputs(

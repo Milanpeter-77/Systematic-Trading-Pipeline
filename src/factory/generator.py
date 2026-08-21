@@ -37,17 +37,31 @@ def expand_parameter_grid(
 
 def generate_candidates(
     symbols: list[str],
+    family_symbol_overrides: dict[str, list[str]] | None = None,
 ) -> list[CandidateSpec]:
     """
     Expand every enabled registered strategy across its parameter grid and symbols.
+
+    family_symbol_overrides lets a family use its own symbol universe
+    instead of `symbols` -- e.g. stat_arb trades precomputed pair-spread
+    pseudo-instruments, not the same tradable instruments every other
+    family crosses with `symbols`. Families not present in the override
+    dict (or when it's None) use `symbols` as before.
     """
     if not symbols:
         raise ValueError("At least one symbol is required.")
+
+    overrides = family_symbol_overrides or {}
 
     candidates: list[CandidateSpec] = []
 
     for family, strategy_class in STRATEGY_REGISTRY.items():
         if not strategy_class.enabled:
+            continue
+
+        family_symbols = overrides.get(family, symbols)
+
+        if not family_symbols:
             continue
 
         parameter_combinations = expand_parameter_grid(
@@ -58,7 +72,7 @@ def generate_candidates(
             # Instantiation validates parameter names and numerical rules.
             strategy_class(**parameters)
 
-            for symbol in symbols:
+            for symbol in family_symbols:
                 candidate = CandidateSpec(
                     family=family,
                     symbol=symbol,

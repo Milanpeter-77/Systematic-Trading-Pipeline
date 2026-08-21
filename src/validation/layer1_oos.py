@@ -392,6 +392,23 @@ def generate_parameter_neighbors(
                 ),
             }
 
+        elif candidate.family == "stat_arb":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
+                ),
+            }
+
+        elif candidate.family == "carry":
+            parameters = {
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
         else:
             raise ValueError(
                 f"Unsupported family: {candidate.family}"

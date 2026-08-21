@@ -4,9 +4,9 @@
   "expected_session": "24/5",
   "tick_size": 0.001,
   "symbol": "XAUUSD",
-  "row_count": 39186,
+  "row_count": 39233,
   "start_timestamp": "2020-01-02T00:00:00+00:00",
-  "end_timestamp": "2026-08-19T06:00:00+00:00",
+  "end_timestamp": "2026-08-21T07:00:00+00:00",
   "invalid_timestamp_count": 0,
   "duplicate_timestamp_rows": 0,
   "missing_required_value_count": 0,
@@ -14,9 +14,9 @@
   "invalid_ohlc_count": 0,
   "extreme_return_count": 21,
   "extreme_range_count": 108,
-  "unexpected_gap_count": 1388,
+  "unexpected_gap_count": 1390,
   "largest_time_gap_minutes": 4620.0,
   "removed_invalid_rows": 0,
   "duplicate_rows_identified": 0,
-  "rows_after_cleaning": 39186
+  "rows_after_cleaning": 39233
 }

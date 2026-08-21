@@ -15,6 +15,7 @@ dependencies = [
     "pyyaml",
     "pyarrow",
     "scipy",
+    "statsmodels",
     "ibapi==10.45.1",
     "protobuf",
 ]

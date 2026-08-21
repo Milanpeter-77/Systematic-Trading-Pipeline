@@ -1,0 +1,13 @@
+candidate_id,family,symbol,threshold
+carry__AUDUSD__threshold-0,carry,AUDUSD,0.0
+carry__AUDUSD__threshold-0p25,carry,AUDUSD,0.25
+carry__AUDUSD__threshold-0p5,carry,AUDUSD,0.5
+carry__EURUSD__threshold-0,carry,EURUSD,0.0
+carry__EURUSD__threshold-0p25,carry,EURUSD,0.25
+carry__EURUSD__threshold-0p5,carry,EURUSD,0.5
+carry__GBPUSD__threshold-0,carry,GBPUSD,0.0
+carry__GBPUSD__threshold-0p25,carry,GBPUSD,0.25
+carry__GBPUSD__threshold-0p5,carry,GBPUSD,0.5
+carry__USDJPY__threshold-0,carry,USDJPY,0.0
+carry__USDJPY__threshold-0p25,carry,USDJPY,0.25
+carry__USDJPY__threshold-0p5,carry,USDJPY,0.5

@@ -7,6 +7,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.data.fred.client import fetch_policy_rate
 from src.data.ibkr.historical import HistoricalDataClient
 from src.data.retrieval import (
     DEFAULT_BACKFILL_START,
@@ -45,6 +46,55 @@ IBKR_PORT = DEFAULT_PORT
 IBKR_CLIENT_ID = DEFAULT_CLIENT_ID
 
 
+def add_interest_rate_differential(
+    data: pd.DataFrame,
+    instrument_config: dict[str, Any],
+) -> pd.DataFrame:
+    """
+    Add an interest_rate_differential column to an FX instrument's H1 bars.
+
+    Only applies to CASH (FX) instruments -- carry needs a base-vs-quote
+    policy-rate differential, which only makes sense for a currency pair.
+    Uses the same base/quote convention IBKR's CASH contracts already use
+    (ibkr_symbol = base currency, currency = quote currency, per
+    src.data.ibkr.contracts.cash_contract's docstring), so no new config
+    schema is needed -- these two fields already say which two currencies
+    to fetch. FRED's policy rates are monthly; forward-filled onto the
+    hourly index since a rate genuinely doesn't change bar-to-bar, and
+    this is the exact same upsampling convention street desks use for a
+    slow-moving macro series against faster market data.
+    """
+    if instrument_config["sec_type"] != "CASH":
+        return data
+
+    base_currency = instrument_config["ibkr_symbol"]
+    quote_currency = instrument_config["currency"]
+
+    base_rate = fetch_policy_rate(base_currency)
+    quote_rate = fetch_policy_rate(quote_currency)
+
+    # base_rate - quote_rate aligns by index (date) automatically, but the
+    # two currencies' series don't necessarily cover the same dates (e.g.
+    # one country's most recent months not yet published) -- pandas fills
+    # those unmatched dates with NaN rather than omitting them. Dropping
+    # NaN before reindex/ffill is essential: reindex's method="ffill" finds
+    # the nearest earlier *index label* and takes its value as-is, it does
+    # NOT skip past a NaN to find the last genuinely valid one -- confirmed
+    # empirically (EUR-USD's differential carried 5 trailing NaN months
+    # from EUR's reporting lag, which would otherwise have silently
+    # poisoned every hourly bar in that window instead of correctly
+    # carrying forward the last known differential).
+    differential = (base_rate - quote_rate).dropna().sort_index()
+
+    result = data.copy()
+
+    result["interest_rate_differential"] = differential.reindex(
+        result.index, method="ffill"
+    )
+
+    return result
+
+
 def process_instrument(
     symbol: str,
     raw_data: pd.DataFrame,
@@ -58,6 +108,11 @@ def process_instrument(
         data=raw_data,
         symbol=symbol,
         expected_session=instrument_config["expected_session"],
+    )
+
+    cleaned_data = add_interest_rate_differential(
+        data=cleaned_data,
+        instrument_config=instrument_config,
     )
 
     complete_report = {

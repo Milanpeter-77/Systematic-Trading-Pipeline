@@ -1,7 +1,7 @@
 experiment:
   timeframe: "1h"
   random_seed: 42
-  candidate_count_expected: 192
+  candidate_count_expected: 216
 
 strategies:
   trend:
@@ -19,6 +19,13 @@ strategies:
   volatility:
     window: [20, 40]
     num_std: [1.5, 2.0, 2.5]
+
+  stat_arb:
+    lookback: [24, 48, 96]
+    entry_z: [1.5, 2.0]
+
+  carry:
+    threshold: [0.0, 0.25, 0.5]
 
 data_quality:
   timeframe: "1h"
@@ -115,6 +122,6 @@ layer4:
   maximum_probability_negative_return: 0.20
 
   deflated_sharpe_minimum_probability: 0.95
-  official_trial_count: 192
+  official_trial_count: 216
 
   minimum_trades_for_bootstrap: 30
