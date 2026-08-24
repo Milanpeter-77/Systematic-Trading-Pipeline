@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 from src.data.retrieval import DEFAULT_HOST, DEFAULT_PORT
+from src.environment import IBKR_EXECUTION_CLIENT_ID
 from src.logging_config import configure_logging
 
 
@@ -26,7 +27,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 # ---------------------------------------------------------------------------
 IBKR_HOST = DEFAULT_HOST
 IBKR_PORT = DEFAULT_PORT  # 7497 = paper. NEVER default this to 7496 (live).
-IBKR_CLIENT_ID = 3  # distinct from data_ingestion's client id (2)
+IBKR_CLIENT_ID = IBKR_EXECUTION_CLIENT_ID  # distinct from data_ingestion's client id (2)
 
 
 def run_execution_loop() -> None:

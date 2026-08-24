@@ -37,10 +37,11 @@ from src.data.ibkr.historical import (  # noqa: E402
     HistoricalDataClient,
     HistoricalRequest,
 )
+from src.environment import IBKR_HOST, IBKR_PORT  # noqa: E402
 
 
-HOST = "127.0.0.1"
-PORT = 7497
+HOST = IBKR_HOST
+PORT = IBKR_PORT
 
 INFORMATIONAL_ERROR_CODES = {2104, 2106, 2107, 2108, 2158}
 

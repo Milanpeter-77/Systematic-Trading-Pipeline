@@ -38,10 +38,11 @@ from src.data.ibkr.historical import (  # noqa: E402
     HistoricalDataClient,
     HistoricalRequest,
 )
+from src.environment import IBKR_HOST, IBKR_PORT  # noqa: E402
 
 
-HOST = "127.0.0.1"
-PORT = 7497
+HOST = IBKR_HOST
+PORT = IBKR_PORT
 CLIENT_ID = 2
 
 MARKET_DATA_TYPE_NAMES = {

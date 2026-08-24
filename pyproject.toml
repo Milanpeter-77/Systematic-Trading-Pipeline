@@ -18,6 +18,7 @@ dependencies = [
     "statsmodels",
     "ibapi==10.45.1",
     "protobuf",
+    "python-dotenv",
 ]
 
 [tool.setuptools]

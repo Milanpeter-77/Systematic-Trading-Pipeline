@@ -18,7 +18,6 @@ __pycache__/
 .env.*
 *.pem
 *.key
-src/data/fred/api_key.txt
 
 # macOS
 .DS_Store

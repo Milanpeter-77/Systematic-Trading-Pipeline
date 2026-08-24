@@ -1,20 +1,16 @@
 from __future__ import annotations
 
 import json
-import os
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
 import pandas as pd
 
+from src.environment import FRED_API_KEY
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-# Fallback location for a locally-saved key -- gitignored (see .gitignore),
-# but FRED_API_KEY as an environment variable is the preferred source and
-# is always checked first.
-API_KEY_FILE = Path(__file__).resolve().parent / "api_key.txt"
 
 FRED_OBSERVATIONS_URL = "https://api.stlouisfed.org/fred/series/observations"
 
@@ -33,20 +29,15 @@ POLICY_RATE_SERIES_BY_CURRENCY = {
 
 def load_api_key() -> str:
     """
-    Load the FRED API key, preferring the FRED_API_KEY environment
-    variable and falling back to the local (gitignored) api_key.txt.
+    Load the FRED API key from the FRED_API_KEY environment variable
+    (see src/environment.py, which reads it from the repo-root .env).
     """
-    api_key = os.environ.get("FRED_API_KEY")
-
-    if api_key:
-        return api_key.strip()
-
-    if API_KEY_FILE.exists():
-        return API_KEY_FILE.read_text(encoding="utf-8").strip()
+    if FRED_API_KEY:
+        return FRED_API_KEY.strip()
 
     raise RuntimeError(
-        "No FRED API key found. Set the FRED_API_KEY environment variable "
-        f"or save the key to {API_KEY_FILE}."
+        "No FRED API key found. Set FRED_API_KEY in your .env file "
+        "(see .env)."
     )
 
 

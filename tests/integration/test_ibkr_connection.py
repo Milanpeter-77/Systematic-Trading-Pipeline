@@ -6,12 +6,22 @@ server time, prints the result, and disconnects.
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
-from ibapi.client import EClient
-from ibapi.wrapper import EWrapper
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from ibapi.client import EClient  # noqa: E402
+from ibapi.wrapper import EWrapper  # noqa: E402
+
+from src.environment import IBKR_HOST, IBKR_PORT  # noqa: E402
 
 
 class IBKRConnectionTest(EWrapper, EClient):
@@ -39,8 +49,8 @@ class IBKRConnectionTest(EWrapper, EClient):
 
 
 def main() -> None:
-    host = "127.0.0.1"
-    port = 7497
+    host = IBKR_HOST
+    port = IBKR_PORT
     client_id = 1
 
     app = IBKRConnectionTest()

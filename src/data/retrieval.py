@@ -8,6 +8,8 @@ from typing import Any
 import pandas as pd
 import yaml
 
+from src.environment import IBKR_DATA_CLIENT_ID, IBKR_HOST, IBKR_PORT
+
 from .ibkr.contracts import build_contract
 from .ibkr.historical import HistoricalDataClient, HistoricalRequest
 
@@ -20,9 +22,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_IBKR_DIRECTORY = PROJECT_ROOT / "data" / "raw" / "ibkr"
 INSTRUMENT_CONFIG_PATH = PROJECT_ROOT / "config" / "instruments.yml"
 
-DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 7497  # paper TWS. 7496 = live TWS, 4001/4002 = IB Gateway.
-DEFAULT_CLIENT_ID = 2
+DEFAULT_HOST = IBKR_HOST
+DEFAULT_PORT = IBKR_PORT  # 7497 = paper TWS. 7496 = live TWS, 4001/4002 = IB Gateway.
+DEFAULT_CLIENT_ID = IBKR_DATA_CLIENT_ID
 DEFAULT_BAR_SIZE = "1 hour"
 DEFAULT_DURATION = "1 Y"
 
