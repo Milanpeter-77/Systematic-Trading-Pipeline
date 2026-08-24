@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from functools import partial
 from typing import Any
 
 import numpy as np
@@ -16,6 +17,7 @@ from src.backtest.metrics import (
 )
 from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
+from src.factory.parallel import get_worker_market_data, run_parallel_map
 from src.validation.layer1_oos import calculate_window_metrics, generate_parameter_neighbors
 
 
@@ -658,42 +660,84 @@ def evaluate_layer2_candidate(
     return record, fold_results
 
 
+def _evaluate_layer2_candidate_worker(
+    result: BacktestResult,
+    layer2_config: dict[str, Any],
+    commission_bps_per_side: float,
+) -> tuple[dict[str, Any], pd.DataFrame]:
+    """
+    Worker-process entry point for parallel Layer 2 evaluation -- see
+    _evaluate_layer1_candidate_worker in layer1_oos.py for why market data
+    is resolved from the worker-local store instead of an argument.
+    """
+    market_data = get_worker_market_data()[result.candidate.symbol]
+
+    return evaluate_layer2_candidate(
+        result=result,
+        market_data=market_data,
+        layer2_config=layer2_config,
+        commission_bps_per_side=commission_bps_per_side,
+    )
+
+
 def run_layer2_gate(
     backtest_results: dict[str, BacktestResult],
     processed_data: dict[str, pd.DataFrame],
     layer2_config: dict[str, Any],
     commission_bps_per_side: float = 0.5,
+    executor: Any = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    executor is an optional concurrent.futures.ProcessPoolExecutor (see
+    src.factory.parallel) whose worker processes were already initialized
+    with this run's market data. Pass None (the default) to evaluate
+    candidates sequentially in-process, exactly as before.
+    """
     _validate_layer2_config(layer2_config)
 
     candidate_records: list[dict[str, Any]] = []
     fold_frames: list[pd.DataFrame] = []
 
-    for candidate_id, result in backtest_results.items():
-        logger.debug(f"Layer 2: {candidate_id}")
+    if executor is None:
+        for candidate_id, result in backtest_results.items():
+            logger.debug(f"Layer 2: {candidate_id}")
 
-        symbol = result.candidate.symbol
+            symbol = result.candidate.symbol
 
-        if symbol not in processed_data:
-            raise KeyError(f"No processed data for symbol {symbol}.")
+            if symbol not in processed_data:
+                raise KeyError(f"No processed data for symbol {symbol}.")
 
-        record, fold_results = evaluate_layer2_candidate(
-            result=result,
-            market_data=processed_data[symbol],
+            record, fold_results = evaluate_layer2_candidate(
+                result=result,
+                market_data=processed_data[symbol],
+                layer2_config=layer2_config,
+                commission_bps_per_side=commission_bps_per_side,
+            )
+
+            candidate_records.append(record)
+            fold_frames.append(fold_results)
+    else:
+        worker = partial(
+            _evaluate_layer2_candidate_worker,
             layer2_config=layer2_config,
             commission_bps_per_side=commission_bps_per_side,
         )
 
-        candidate_records.append(record)
-        fold_frames.append(fold_results)
+        for record, fold_results in run_parallel_map(
+            executor, worker, backtest_results.values()
+        ):
+            candidate_records.append(record)
+            fold_frames.append(fold_results)
 
     layer2_results = pd.DataFrame(candidate_records)
-    all_fold_results = pd.concat(fold_frames, ignore_index=True)
+    all_fold_results = (
+        pd.concat(fold_frames, ignore_index=True) if fold_frames else pd.DataFrame()
+    )
 
     if len(layer2_results) != len(backtest_results):
         raise RuntimeError("Layer 2 did not produce one row per official candidate.")
 
-    if not layer2_results["candidate_id"].is_unique:
+    if not layer2_results.empty and not layer2_results["candidate_id"].is_unique:
         raise RuntimeError("Layer 2 produced duplicate candidate IDs.")
 
     return layer2_results, all_fold_results

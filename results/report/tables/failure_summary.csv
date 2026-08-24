@@ -19,7 +19,7 @@ layer3,worst_window_net_return,12
 layer3,march_2020_drawdown,11
 layer3,march_2020_net_return,6
 layer4,deflated_sharpe_probability,216
-layer4,permutation_p_value,192
+layer4,permutation_p_value,194
 layer4,bootstrap_probability_negative_return,180
-layer4,bootstrap_drawdown_p95,146
+layer4,bootstrap_drawdown_p95,145
 layer4,bootstrap_trade_count,12

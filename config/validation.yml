@@ -1,31 +1,20 @@
 experiment:
   timeframe: "1h"
   random_seed: 42
-  candidate_count_expected: 216
 
-strategies:
-  trend:
-    fast_window: [12, 24]
-    slow_window: [72, 120, 240]
+# Strategy parameter grids are not declared here -- they live only as
+# `parameter_grid` class attributes on each BaseStrategy subclass under
+# src/strategies/. A YAML copy previously lived here but was never read by
+# any code and had already drifted out of sync with the real grids.
 
-  mean_reversion:
-    lookback: [24, 48, 96]
-    entry_z: [1.5, 2.0]
+cooldown:
+  enabled: true
+  period_days: 30
+  db_path: results/state/test_history.db
 
-  momentum:
-    lookback: [24, 48, 96]
-    threshold: [0.0, 0.01]
-
-  volatility:
-    window: [20, 40]
-    num_std: [1.5, 2.0, 2.5]
-
-  stat_arb:
-    lookback: [24, 48, 96]
-    entry_z: [1.5, 2.0]
-
-  carry:
-    threshold: [0.0, 0.25, 0.5]
+parallelism:
+  enabled: true
+  max_workers: 2   # conservative default for the weaker always-on machine; 1 forces sequential
 
 data_quality:
   timeframe: "1h"
@@ -122,6 +111,9 @@ layer4:
   maximum_probability_negative_return: 0.20
 
   deflated_sharpe_minimum_probability: 0.95
-  official_trial_count: 216
+  # official_trial_count is not declared here -- it's computed dynamically
+  # in run_alpha_factory() from len(build_candidate_population()) and
+  # passed straight into run_layer4_gate(), so it can never drift out of
+  # sync with the real candidate population as strategies/params grow.
 
   minimum_trades_for_bootstrap: 30

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import logging
+from functools import partial
 from typing import Any
 
 import numpy as np
@@ -9,6 +11,7 @@ from scipy.stats import kurtosis, norm, skew
 
 from src.backtest.metrics import infer_periods_per_year
 from src.backtest.result import BacktestResult
+from src.factory.parallel import run_parallel_map
 
 
 logger = logging.getLogger(__name__)
@@ -822,10 +825,27 @@ def evaluate_layer4_criteria(
 
     return len(failures) == 0, failures
 
+def stable_candidate_seed(candidate_id: str, base_seed: int) -> int:
+    """
+    Derive a per-candidate RNG seed from the candidate's own identity.
+
+    Must be independent of any run's batch composition or process, since a
+    cooldown-filtered run only tests a varying subset of candidates each
+    time, and worker processes in a parallel pool don't share Python's
+    per-process string hash salt. Using the built-in `hash()` or a
+    position-in-batch index would make permutation/bootstrap draws (and
+    therefore layer4 pass/fail) silently non-reproducible across runs.
+    """
+    digest = hashlib.sha256(candidate_id.encode("utf-8")).hexdigest()
+
+    return base_seed + (int(digest, 16) % 10_000_000)
+
+
 def evaluate_layer4_candidate(
     result: BacktestResult,
     layer4_config: dict[str, Any],
     candidate_seed: int,
+    official_trial_count: int,
 ) -> tuple[
     dict[str, Any],
     pd.DataFrame,
@@ -875,11 +895,7 @@ def evaluate_layer4_candidate(
             returns=result.timeseries[
                 "net_return"
             ],
-            trial_count=int(
-                layer4_config[
-                    "official_trial_count"
-                ]
-            ),
+            trial_count=official_trial_count,
         )
     )
 
@@ -953,12 +969,39 @@ def evaluate_layer4_candidate(
         bootstrap_frame,
     )
 
+def _evaluate_layer4_candidate_worker(
+    result: BacktestResult,
+    layer4_config: dict[str, Any],
+    official_trial_count: int,
+    base_seed: int,
+) -> tuple[dict[str, Any], pd.DataFrame, pd.DataFrame]:
+    """
+    Worker-process entry point for parallel Layer 4 evaluation. Layer 4
+    needs no market data (only each candidate's own backtest timeseries
+    and trades), so unlike layers 1-3 this doesn't touch the worker-local
+    market-data store.
+    """
+    candidate_seed = stable_candidate_seed(
+        candidate_id=result.candidate.candidate_id,
+        base_seed=base_seed,
+    )
+
+    return evaluate_layer4_candidate(
+        result=result,
+        layer4_config=layer4_config,
+        candidate_seed=candidate_seed,
+        official_trial_count=official_trial_count,
+    )
+
+
 def run_layer4_gate(
     backtest_results: dict[
         str,
         BacktestResult,
     ],
     layer4_config: dict[str, Any],
+    official_trial_count: int,
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -966,6 +1009,10 @@ def run_layer4_gate(
 ]:
     """
     Evaluate all official candidates under Layer 4.
+
+    executor is an optional concurrent.futures.ProcessPoolExecutor (see
+    src.factory.parallel). Pass None (the default) to evaluate candidates
+    sequentially in-process, exactly as before.
     """
     candidate_records: list[
         dict[str, Any]
@@ -989,56 +1036,87 @@ def run_layer4_gate(
         backtest_results
     )
 
-    for candidate_number, candidate_id in enumerate(
-        sorted_candidate_ids
-    ):
-        logger.debug(
-            f"Layer 4: {candidate_id}"
+    if executor is None:
+        for candidate_id in sorted_candidate_ids:
+            logger.debug(
+                f"Layer 4: {candidate_id}"
+            )
+
+            result = backtest_results[
+                candidate_id
+            ]
+
+            candidate_seed = stable_candidate_seed(
+                candidate_id=candidate_id,
+                base_seed=base_seed,
+            )
+
+            (
+                record,
+                permutation_frame,
+                bootstrap_frame,
+            ) = evaluate_layer4_candidate(
+                result=result,
+                layer4_config=layer4_config,
+                candidate_seed=candidate_seed,
+                official_trial_count=official_trial_count,
+            )
+
+            candidate_records.append(
+                record
+            )
+
+            permutation_frames.append(
+                permutation_frame
+            )
+
+            bootstrap_frames.append(
+                bootstrap_frame
+            )
+    else:
+        worker = partial(
+            _evaluate_layer4_candidate_worker,
+            layer4_config=layer4_config,
+            official_trial_count=official_trial_count,
+            base_seed=base_seed,
         )
 
-        result = backtest_results[
-            candidate_id
+        ordered_results = [
+            backtest_results[candidate_id]
+            for candidate_id in sorted_candidate_ids
         ]
 
-        candidate_seed = (
-            base_seed
-            + candidate_number * 10_000
-        )
-
-        (
+        for (
             record,
             permutation_frame,
             bootstrap_frame,
-        ) = evaluate_layer4_candidate(
-            result=result,
-            layer4_config=layer4_config,
-            candidate_seed=candidate_seed,
-        )
+        ) in run_parallel_map(executor, worker, ordered_results):
+            candidate_records.append(
+                record
+            )
 
-        candidate_records.append(
-            record
-        )
+            permutation_frames.append(
+                permutation_frame
+            )
 
-        permutation_frames.append(
-            permutation_frame
-        )
-
-        bootstrap_frames.append(
-            bootstrap_frame
-        )
+            bootstrap_frames.append(
+                bootstrap_frame
+            )
 
     layer4_results = pd.DataFrame(
         candidate_records
     )
 
-    permutation_results = pd.concat(
-        permutation_frames,
-        ignore_index=True,
+    permutation_results = (
+        pd.concat(permutation_frames, ignore_index=True)
+        if permutation_frames
+        else pd.DataFrame()
     )
 
-    bootstrap_results = pd.concat(
-        bootstrap_frames,
-        ignore_index=True,
+    bootstrap_results = (
+        pd.concat(bootstrap_frames, ignore_index=True)
+        if bootstrap_frames
+        else pd.DataFrame()
     )
 
     if len(layer4_results) != len(
@@ -1049,7 +1127,7 @@ def run_layer4_gate(
             "per official candidate."
         )
 
-    if not layer4_results[
+    if not layer4_results.empty and not layer4_results[
         "candidate_id"
     ].is_unique:
         raise RuntimeError(

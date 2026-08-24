@@ -64,5 +64,26 @@ def configure_logging(
     root_logger.addHandler(file_handler)
 
     root_logger._configured_log_file = log_file_path
+    root_logger._configured_run_id = timestamp
 
     return log_file_path
+
+
+def get_current_run_id() -> str:
+    """
+    Return this process's run id -- the same YYYYMMDD_HHMMSS timestamp
+    embedded in the current log filename (see configure_logging()), so a
+    structured test-history row (src.factory.test_history) can be
+    cross-referenced back to its free-text log file for free.
+
+    Falls back to a fresh timestamp if configure_logging() hasn't been
+    called yet in this process (e.g. a standalone/test invocation).
+    """
+    root_logger = logging.getLogger()
+
+    run_id = getattr(root_logger, "_configured_run_id", None)
+
+    if run_id is not None:
+        return run_id
+
+    return datetime.now().strftime(LOG_FILENAME_TIMESTAMP_FORMAT)

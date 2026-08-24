@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from functools import partial
 from itertools import product
 from typing import Any
 
@@ -18,6 +19,7 @@ from src.backtest.metrics import (
 )
 from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
+from src.factory.parallel import get_worker_market_data, run_parallel_map
 
 
 logger = logging.getLogger(__name__)
@@ -746,18 +748,47 @@ def evaluate_layer1_candidate(
     return record, neighbor_results
 
 
+def _evaluate_layer1_candidate_worker(
+    result: BacktestResult,
+    split: SampleSplit,
+    layer1_criteria: dict[str, Any],
+    commission_bps_per_side: float,
+) -> tuple[dict[str, Any], pd.DataFrame]:
+    """
+    Worker-process entry point for parallel Layer 1 evaluation: resolves
+    this candidate's market data from the pool-initialized worker-local
+    store (src.factory.parallel) instead of receiving the full
+    processed_data dict as an argument, so it isn't re-pickled per task.
+    """
+    market_data = get_worker_market_data()[result.candidate.symbol]
+
+    return evaluate_layer1_candidate(
+        result=result,
+        market_data=market_data,
+        split=split,
+        layer1_criteria=layer1_criteria,
+        commission_bps_per_side=commission_bps_per_side,
+    )
+
+
 def run_layer1_gate(
     backtest_results: dict[str, BacktestResult],
     processed_data: dict[str, pd.DataFrame],
     sample_config: dict[str, Any],
     layer1_config: dict[str, Any],
     commission_bps_per_side: float = 0.5,
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
 ]:
     """
     Evaluate all official candidates under Layer 1.
+
+    executor is an optional concurrent.futures.ProcessPoolExecutor (see
+    src.factory.parallel) whose worker processes were already initialized
+    with this run's market data. Pass None (the default) to evaluate
+    candidates sequentially in-process, exactly as before.
     """
     split = SampleSplit.from_config(
         sample_config
@@ -768,33 +799,51 @@ def run_layer1_gate(
     candidate_records: list[dict[str, Any]] = []
     neighbor_frames: list[pd.DataFrame] = []
 
-    for candidate_id, result in backtest_results.items():
-        logger.debug(f"Layer 1: {candidate_id}")
+    if executor is None:
+        for candidate_id, result in backtest_results.items():
+            logger.debug(f"Layer 1: {candidate_id}")
 
-        symbol = result.candidate.symbol
+            symbol = result.candidate.symbol
 
-        record, neighbors = (
-            evaluate_layer1_candidate(
-                result=result,
-                market_data=processed_data[symbol],
-                split=split,
-                layer1_criteria=layer1_config,
-                commission_bps_per_side=(
-                    commission_bps_per_side
-                ),
+            record, neighbors = (
+                evaluate_layer1_candidate(
+                    result=result,
+                    market_data=processed_data[symbol],
+                    split=split,
+                    layer1_criteria=layer1_config,
+                    commission_bps_per_side=(
+                        commission_bps_per_side
+                    ),
+                )
             )
+
+            candidate_records.append(record)
+            neighbor_frames.append(neighbors)
+    else:
+        worker = partial(
+            _evaluate_layer1_candidate_worker,
+            split=split,
+            layer1_criteria=layer1_config,
+            commission_bps_per_side=commission_bps_per_side,
         )
 
-        candidate_records.append(record)
-        neighbor_frames.append(neighbors)
+        for record, neighbors in run_parallel_map(
+            executor, worker, backtest_results.values()
+        ):
+            candidate_records.append(record)
+            neighbor_frames.append(neighbors)
 
     layer1_results = pd.DataFrame(
         candidate_records
     )
 
-    all_neighbor_results = pd.concat(
-        neighbor_frames,
-        ignore_index=True,
+    all_neighbor_results = (
+        pd.DataFrame()
+        if not neighbor_frames
+        else pd.concat(
+            neighbor_frames,
+            ignore_index=True,
+        )
     )
 
     if len(layer1_results) != len(backtest_results):
@@ -802,7 +851,7 @@ def run_layer1_gate(
             "Layer 1 did not produce one row per candidate."
         )
 
-    if not layer1_results[
+    if not layer1_results.empty and not layer1_results[
         "candidate_id"
     ].is_unique:
         raise RuntimeError(

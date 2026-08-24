@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from functools import partial
 from typing import Any
 
 import numpy as np
@@ -13,6 +14,7 @@ from src.backtest.metrics import (
     infer_periods_per_year,
 )
 from src.backtest.result import BacktestResult
+from src.factory.parallel import get_worker_market_data, run_parallel_map
 
 
 logger = logging.getLogger(__name__)
@@ -757,6 +759,24 @@ def evaluate_layer3_candidate(
     )
 
 
+def _evaluate_layer3_candidate_worker(
+    result: BacktestResult,
+    layer3_config: dict[str, Any],
+) -> tuple[dict[str, Any], pd.DataFrame, pd.DataFrame]:
+    """
+    Worker-process entry point for parallel Layer 3 evaluation -- see
+    _evaluate_layer1_candidate_worker in layer1_oos.py for why market data
+    is resolved from the worker-local store instead of an argument.
+    """
+    market_data = get_worker_market_data()[result.candidate.symbol]
+
+    return evaluate_layer3_candidate(
+        result=result,
+        market_data=market_data,
+        layer3_config=layer3_config,
+    )
+
+
 def run_layer3_gate(
     backtest_results: dict[
         str,
@@ -767,6 +787,7 @@ def run_layer3_gate(
         pd.DataFrame,
     ],
     layer3_config: dict[str, Any],
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -774,6 +795,11 @@ def run_layer3_gate(
 ]:
     """
     Evaluate all official candidates under Layer 3.
+
+    executor is an optional concurrent.futures.ProcessPoolExecutor (see
+    src.factory.parallel) whose worker processes were already initialized
+    with this run's market data. Pass None (the default) to evaluate
+    candidates sequentially in-process, exactly as before.
     """
     candidate_records: list[
         dict[str, Any]
@@ -787,49 +813,68 @@ def run_layer3_gate(
         pd.DataFrame
     ] = []
 
-    for candidate_id, result in (
-        backtest_results.items()
-    ):
-        logger.debug(f"Layer 3: {candidate_id}")
+    if executor is None:
+        for candidate_id, result in (
+            backtest_results.items()
+        ):
+            logger.debug(f"Layer 3: {candidate_id}")
 
-        symbol = result.candidate.symbol
+            symbol = result.candidate.symbol
 
-        (
-            candidate_record,
-            historical_results,
-            synthetic_results,
-        ) = evaluate_layer3_candidate(
-            result=result,
-            market_data=processed_data[
-                symbol
-            ],
+            (
+                candidate_record,
+                historical_results,
+                synthetic_results,
+            ) = evaluate_layer3_candidate(
+                result=result,
+                market_data=processed_data[
+                    symbol
+                ],
+                layer3_config=layer3_config,
+            )
+
+            candidate_records.append(
+                candidate_record
+            )
+
+            historical_frames.append(
+                historical_results
+            )
+
+            synthetic_frames.append(
+                synthetic_results
+            )
+    else:
+        worker = partial(
+            _evaluate_layer3_candidate_worker,
             layer3_config=layer3_config,
         )
 
-        candidate_records.append(
-            candidate_record
-        )
-
-        historical_frames.append(
-            historical_results
-        )
-
-        synthetic_frames.append(
-            synthetic_results
-        )
+        for (
+            candidate_record,
+            historical_results,
+            synthetic_results,
+        ) in run_parallel_map(
+            executor, worker, backtest_results.values()
+        ):
+            candidate_records.append(candidate_record)
+            historical_frames.append(historical_results)
+            synthetic_frames.append(synthetic_results)
 
     layer3_results = pd.DataFrame(
         candidate_records
     )
 
-    all_historical_results = pd.concat(
-        historical_frames,
-        ignore_index=True,
+    all_historical_results = (
+        pd.concat(historical_frames, ignore_index=True)
+        if historical_frames
+        else pd.DataFrame()
     )
 
-    all_synthetic_results = pd.concat(
-        synthetic_frames,
-        ignore_index=True,
+    all_synthetic_results = (
+        pd.concat(synthetic_frames, ignore_index=True)
+        if synthetic_frames
+        else pd.DataFrame()
     )
 
     if len(layer3_results) != len(
@@ -840,7 +885,7 @@ def run_layer3_gate(
             "per official candidate."
         )
 
-    if not layer3_results[
+    if not layer3_results.empty and not layer3_results[
         "candidate_id"
     ].is_unique:
         raise RuntimeError(

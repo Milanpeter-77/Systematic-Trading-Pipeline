@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -14,13 +15,15 @@ from src.data.features.statistical import (
     screen_cointegrated_pairs,
 )
 from src.data.retrieval import load_instrument_config
+from src.factory import test_history
 from src.factory.candidate import candidate_from_record
 from src.factory.generator import (
     candidates_to_frame,
     candidates_to_frames_by_family,
     generate_candidates,
 )
-from src.logging_config import configure_logging
+from src.factory.parallel import create_executor, get_worker_market_data, run_parallel_map
+from src.logging_config import configure_logging, get_current_run_id
 from src.reporting.figures import save_report_figures
 from src.reporting.report_data import load_report_data
 from src.reporting.summaries import build_report_summary
@@ -45,6 +48,65 @@ VALIDATION_RESULTS_DIRECTORY = RESULTS_DIRECTORY / "validation"
 REPORT_RESULTS_DIRECTORY = RESULTS_DIRECTORY / "report"
 INSTRUMENT_CONFIG_PATH = PROJECT_ROOT / "config" / "instruments.yml"
 VALIDATION_CONFIG_PATH = PROJECT_ROOT / "config" / "validation.yml"
+
+
+def _upsert_by_candidate_id(
+    path: Path,
+    new_rows: pd.DataFrame,
+    key: str = "candidate_id",
+) -> pd.DataFrame:
+    """
+    Merge freshly computed rows into an existing results file, keyed by
+    candidate_id: a retested candidate's row is replaced, everything else
+    carries forward untouched.
+
+    This is what makes the "current status" tables (candidate_metrics.csv,
+    layer{1-4}_results.csv, final_funnel.csv, final_survivors.csv) correct
+    once cooldown filtering means a run only tests a subset of the full
+    candidate population -- a plain overwrite would silently drop every
+    candidate skipped this run. On the very first run (no existing file,
+    or an empty new_rows), this degrades to a plain write of new_rows.
+    """
+    existing = (
+        pd.read_csv(path)
+        if path.exists()
+        else pd.DataFrame(columns=new_rows.columns)
+    )
+
+    merged = (
+        pd.concat([existing, new_rows], ignore_index=True)
+        .drop_duplicates(subset=key, keep="last")
+        .sort_values(key)
+        .reset_index(drop=True)
+    )
+
+    merged.to_csv(path, index=False)
+
+    return merged
+
+
+def _run_diagnostics_directory() -> Path:
+    """
+    Directory for this run's per-run-only diagnostic outputs (neighbor
+    perturbations, walk-forward windows, stress windows, permutation and
+    bootstrap draws): a fresh draw is only meaningful for the candidates
+    actually tested this run, so unlike the "current status" tables these
+    are never merged with history -- but they must still live under a
+    per-run subdirectory (keyed by the same run id used everywhere else,
+    see src.logging_config.get_current_run_id) rather than a fixed
+    filename, or a run that skips everything due to cooldown would
+    silently overwrite the previous run's real diagnostics with an empty
+    file.
+    """
+    directory = (
+        VALIDATION_RESULTS_DIRECTORY
+        / "diagnostics"
+        / get_current_run_id()
+    )
+
+    directory.mkdir(parents=True, exist_ok=True)
+
+    return directory
 
 
 def prepare_pair_features(
@@ -223,6 +285,26 @@ def build_candidate_population(
     return candidates_frame
 
 
+def _backtest_candidate_record(
+    record: dict[str, Any],
+    commission_bps_per_side: float,
+) -> BacktestResult:
+    """
+    Worker-process entry point for parallel candidate backtesting: resolves
+    this candidate's market data from the pool-initialized worker-local
+    store (src.factory.parallel) instead of receiving the full
+    processed_data dict as an argument, so it isn't re-pickled per task.
+    """
+    candidate = candidate_from_record(record)
+    market_data = get_worker_market_data()[candidate.symbol]
+
+    return run_candidate_backtest(
+        candidate=candidate,
+        market_data=market_data,
+        commission_bps_per_side=commission_bps_per_side,
+    )
+
+
 def run_all_candidate_backtests(
     processed_data: dict[
         str,
@@ -231,12 +313,25 @@ def run_all_candidate_backtests(
     candidate_frame: pd.DataFrame | None = None,
     pair_symbols: list[str] | None = None,
     save_output: bool = True,
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     dict[str, BacktestResult],
 ]:
     """
-    Backtest the complete official candidate population.
+    Backtest the given candidate population -- typically the subset of the
+    full official population that is due for testing this run (see
+    src.factory.test_history).
+
+    executor is an optional concurrent.futures.ProcessPoolExecutor (see
+    src.factory.parallel) whose worker processes were already initialized
+    with this run's market data. Pass None (the default) to backtest
+    candidates sequentially in-process, exactly as before.
+
+    The returned metrics frame is merged with any prior
+    results/backtests/candidate_metrics.csv history when save_output is
+    True, so a candidate skipped this run still carries forward its last
+    known metrics rather than disappearing from the file.
     """
     if processed_data is None:
         processed_data = load_all_processed_data(pair_symbols)
@@ -249,6 +344,8 @@ def run_all_candidate_backtests(
             )
         )
 
+    records = candidate_frame.to_dict(orient="records")
+
     results: dict[
         str,
         BacktestResult,
@@ -258,45 +355,51 @@ def run_all_candidate_backtests(
         dict[str, Any]
     ] = []
 
-    for record in (
-        candidate_frame.to_dict(
-            orient="records"
-        )
-    ):
-        candidate = (
-            candidate_from_record(
-                record
-            )
-        )
-
-        if candidate.symbol not in (
-            processed_data
-        ):
-            raise KeyError(
-                "No processed market data for "
-                f"{candidate.symbol}."
+    if executor is None:
+        for record in records:
+            candidate = (
+                candidate_from_record(
+                    record
+                )
             )
 
-        logger.debug(
-            f"Backtesting "
-            f"{candidate.candidate_id}"
-        )
+            if candidate.symbol not in (
+                processed_data
+            ):
+                raise KeyError(
+                    "No processed market data for "
+                    f"{candidate.symbol}."
+                )
 
-        result = run_candidate_backtest(
-            candidate=candidate,
-            market_data=processed_data[
-                candidate.symbol
-            ],
+            logger.debug(
+                f"Backtesting "
+                f"{candidate.candidate_id}"
+            )
+
+            result = run_candidate_backtest(
+                candidate=candidate,
+                market_data=processed_data[
+                    candidate.symbol
+                ],
+                commission_bps_per_side=0.5,
+            )
+
+            results[
+                candidate.candidate_id
+            ] = result
+
+            metric_records.append(
+                result.metrics_record()
+            )
+    else:
+        worker = partial(
+            _backtest_candidate_record,
             commission_bps_per_side=0.5,
         )
 
-        results[
-            candidate.candidate_id
-        ] = result
-
-        metric_records.append(
-            result.metrics_record()
-        )
+        for result in run_parallel_map(executor, worker, records):
+            results[result.candidate.candidate_id] = result
+            metric_records.append(result.metrics_record())
 
     metrics_frame = pd.DataFrame(
         metric_records
@@ -310,7 +413,7 @@ def run_all_candidate_backtests(
             "result per candidate."
         )
 
-    if not metrics_frame[
+    if not metrics_frame.empty and not metrics_frame[
         "candidate_id"
     ].is_unique:
         raise RuntimeError(
@@ -324,10 +427,10 @@ def run_all_candidate_backtests(
             exist_ok=True,
         )
 
-        metrics_frame.to_csv(
+        metrics_frame = _upsert_by_candidate_id(
             BACKTEST_RESULTS_DIRECTORY
             / "candidate_metrics.csv",
-            index=False,
+            metrics_frame,
         )
 
     return metrics_frame, results
@@ -343,12 +446,20 @@ def run_layer1_validation(
         pd.DataFrame,
     ],
     save_output: bool = True,
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
 ]:
     """
-    Run chronological OOS and parameter-sensitivity validation.
+    Run chronological OOS and parameter-sensitivity validation for the
+    given (cooldown-filtered) backtest results.
+
+    The returned layer1_results is merged with prior
+    results/validation/layer1_results.csv history when save_output is
+    True, so a candidate skipped this run still shows its last known
+    pass/fail rather than disappearing. neighbor_results (a per-run
+    robustness diagnostic) covers only the candidates evaluated this run.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -367,6 +478,7 @@ def run_layer1_validation(
             "layer1"
         ],
         commission_bps_per_side=0.5,
+        executor=executor,
     )
 
     if save_output:
@@ -375,14 +487,14 @@ def run_layer1_validation(
             exist_ok=True,
         )
 
-        layer1_results.to_csv(
+        layer1_results = _upsert_by_candidate_id(
             VALIDATION_RESULTS_DIRECTORY
             / "layer1_results.csv",
-            index=False,
+            layer1_results,
         )
 
         neighbor_results.to_csv(
-            VALIDATION_RESULTS_DIRECTORY
+            _run_diagnostics_directory()
             / "layer1_neighbor_results.csv",
             index=False,
         )
@@ -413,12 +525,19 @@ def run_layer2_validation(
         pd.DataFrame,
     ],
     save_output: bool = True,
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
 ]:
     """
-    Run rolling walk-forward re-optimization validation.
+    Run rolling walk-forward re-optimization validation for the given
+    (cooldown-filtered) backtest results.
+
+    The returned layer2_results is merged with prior
+    results/validation/layer2_results.csv history when save_output is
+    True (see run_layer1_validation for why). window_results is a per-run
+    diagnostic covering only the candidates evaluated this run.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -434,6 +553,7 @@ def run_layer2_validation(
             "layer2"
         ],
         commission_bps_per_side=0.5,
+        executor=executor,
     )
 
     if save_output:
@@ -442,14 +562,14 @@ def run_layer2_validation(
             exist_ok=True,
         )
 
-        layer2_results.to_csv(
+        layer2_results = _upsert_by_candidate_id(
             VALIDATION_RESULTS_DIRECTORY
             / "layer2_results.csv",
-            index=False,
+            layer2_results,
         )
 
         window_results.to_csv(
-            VALIDATION_RESULTS_DIRECTORY
+            _run_diagnostics_directory()
             / "layer2_window_results.csv",
             index=False,
         )
@@ -480,13 +600,21 @@ def run_layer3_validation(
         pd.DataFrame,
     ],
     save_output: bool = True,
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
 ]:
     """
-    Run historical and synthetic stress validation.
+    Run historical and synthetic stress validation for the given
+    (cooldown-filtered) backtest results.
+
+    The returned layer3_results is merged with prior
+    results/validation/layer3_results.csv history when save_output is
+    True (see run_layer1_validation for why). The historical/synthetic
+    stress diagnostics are per-run and cover only the candidates evaluated
+    this run.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -502,6 +630,7 @@ def run_layer3_validation(
         layer3_config=gate_config[
             "layer3"
         ],
+        executor=executor,
     )
 
     if save_output:
@@ -510,20 +639,22 @@ def run_layer3_validation(
             exist_ok=True,
         )
 
-        layer3_results.to_csv(
+        layer3_results = _upsert_by_candidate_id(
             VALIDATION_RESULTS_DIRECTORY
             / "layer3_results.csv",
-            index=False,
+            layer3_results,
         )
 
+        diagnostics_directory = _run_diagnostics_directory()
+
         historical_stress_results.to_csv(
-            VALIDATION_RESULTS_DIRECTORY
+            diagnostics_directory
             / "layer3_historical_stress_results.csv",
             index=False,
         )
 
         synthetic_stress_results.to_csv(
-            VALIDATION_RESULTS_DIRECTORY
+            diagnostics_directory
             / "layer3_synthetic_stress_results.csv",
             index=False,
         )
@@ -550,14 +681,31 @@ def run_layer4_validation(
         str,
         BacktestResult,
     ],
+    official_trial_count: int,
     save_output: bool = True,
+    executor: Any = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
 ]:
     """
-    Run permutation, bootstrap, and Deflated Sharpe validation.
+    Run permutation, bootstrap, and Deflated Sharpe validation for the
+    given (cooldown-filtered) backtest results.
+
+    official_trial_count is the size of the FULL official candidate
+    population (before cooldown filtering), used as the Deflated Sharpe
+    Ratio's multiple-testing correction denominator -- it must reflect the
+    true universe being screened, not just the subset retested this run.
+    See build_candidate_population() in run_alpha_factory() for where this
+    is computed.
+
+    The returned layer4_results is merged with prior
+    results/validation/layer4_results.csv history when save_output is
+    True (see run_layer1_validation for why). The permutation/bootstrap
+    diagnostics are per-run and cover only the candidates evaluated this
+    run -- a fresh permutation draw is only meaningful for a candidate
+    actually tested this run, so these are not merged with history.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -572,6 +720,8 @@ def run_layer4_validation(
         layer4_config=gate_config[
             "layer4"
         ],
+        official_trial_count=official_trial_count,
+        executor=executor,
     )
 
     if save_output:
@@ -580,20 +730,22 @@ def run_layer4_validation(
             exist_ok=True,
         )
 
-        layer4_results.to_csv(
+        layer4_results = _upsert_by_candidate_id(
             VALIDATION_RESULTS_DIRECTORY
             / "layer4_results.csv",
-            index=False,
+            layer4_results,
         )
 
+        diagnostics_directory = _run_diagnostics_directory()
+
         permutation_results.to_parquet(
-            VALIDATION_RESULTS_DIRECTORY
+            diagnostics_directory
             / "layer4_permutation_results.parquet",
             index=False,
         )
 
         bootstrap_results.to_parquet(
-            VALIDATION_RESULTS_DIRECTORY
+            diagnostics_directory
             / "layer4_bootstrap_results.parquet",
             index=False,
         )
@@ -917,12 +1069,26 @@ def run_alpha_factory() -> None:
     pipeline (see src.pipelines.data_ingestion) and is available under
     data/processed/.
 
+    Candidates already tested within their cooldown window (see
+    src.factory.test_history and the `cooldown:` block in
+    config/validation.yml) are skipped for backtesting and Layer 1-4
+    validation this run; their most recent results simply carry forward in
+    the output CSVs. Backtesting and Layer 1-4 validation optionally run
+    in parallel across candidates (see src.factory.parallel and the
+    `parallelism:` block in config/validation.yml).
+
     Each stage below is a small, self-contained, banner-delimited block.
     Comment out a whole stage to skip it while testing.
     """
     logger.info("=" * 72)
     logger.info("ALPHA FACTORY PIPELINE")
     logger.info("=" * 72)
+
+    run_id = get_current_run_id()
+
+    config = load_gate_config(VALIDATION_CONFIG_PATH)
+    cooldown_config = config["cooldown"]
+    parallelism_config = config["parallelism"]
 
     # ======================================================================
     # STAGE 1/6 -- FEATURE ENGINEERING (cointegrated-pair screening)
@@ -947,134 +1113,225 @@ def run_alpha_factory() -> None:
         )
     )
 
+    official_trial_count = len(candidate_population)
+
     logger.info(
         f"Generated "
-        f"{len(candidate_population)} "
+        f"{official_trial_count} "
         f"official candidates."
+    )
+
+    # ----------------------------------------------------------------------
+    # COOLDOWN FILTER -- only candidates not tested within the configured
+    # cooldown period are due for backtesting/validation this run.
+    # ----------------------------------------------------------------------
+    conn = None
+    due_population = candidate_population
+    skipped_count = 0
+
+    if cooldown_config["enabled"]:
+        db_path = PROJECT_ROOT / cooldown_config["db_path"]
+        conn = test_history.get_connection(db_path)
+
+        due_population, skipped_population = test_history.candidates_due_for_testing(
+            conn=conn,
+            candidate_frame=candidate_population,
+            cooldown_days=float(cooldown_config["period_days"]),
+        )
+
+        skipped_count = len(skipped_population)
+
+    logger.info(
+        f"{len(due_population)} of {official_trial_count} candidates due "
+        f"for testing this run ({skipped_count} still within their "
+        f"{cooldown_config['period_days']}-day cooldown)."
     )
 
     # ======================================================================
     # STAGE 3/6 -- CANDIDATE BACKTESTS
-    # Reloads processed data from disk (data/processed/*.parquet, produced
-    # by the data-ingestion pipeline plus the pair spreads saved above)
-    # since it is no longer fetched in-process here.
-    # ======================================================================
-    logger.info("[3/6] Running candidate backtests...")
-
-    (
-        candidate_metrics,
-        backtest_results,
-    ) = run_all_candidate_backtests(
-        processed_data=None,
-        candidate_frame=candidate_population,
-        pair_symbols=pair_symbols,
-        save_output=True,
-    )
-
-    logger.info(
-        f"Completed "
-        f"{len(backtest_results)} "
-        f"candidate backtests."
-    )
-
-    # ======================================================================
-    # STAGE 4/6 -- LAYER 1-4 VALIDATION
+    # Loaded once here (rather than reloaded inside each stage) so the same
+    # in-memory market data can also seed the parallel worker pool below.
     # ======================================================================
     processed_data = load_all_processed_data(pair_symbols)
 
-    logger.info(
-        "[4/6] Running Layer 1: "
-        "OOS and parameter sensitivity..."
+    max_workers = (
+        int(parallelism_config["max_workers"])
+        if parallelism_config["enabled"]
+        else 1
     )
 
-    (
-        layer1_results,
-        layer1_neighbor_results,
-    ) = run_layer1_validation(
-        backtest_results=backtest_results,
-        processed_data=processed_data,
-        save_output=True,
+    executor = create_executor(
+        max_workers=max_workers,
+        market_data_by_symbol=processed_data,
     )
 
-    logger.info(
-        "Layer 1 independent passes: "
-        f"{int(layer1_results['layer1_pass'].sum())}"
-    )
+    if executor is not None:
+        logger.info(
+            f"Parallel execution enabled: {max_workers} worker processes."
+        )
 
-    logger.info(
-        "Running Layer 2: "
-        "walk-forward validation..."
-    )
+    try:
+        logger.info("[3/6] Running candidate backtests...")
 
-    (
-        layer2_results,
-        layer2_window_results,
-    ) = run_layer2_validation(
-        backtest_results=backtest_results,
-        processed_data=processed_data,
-        save_output=True,
-    )
+        (
+            candidate_metrics,
+            backtest_results,
+        ) = run_all_candidate_backtests(
+            processed_data=processed_data,
+            candidate_frame=due_population,
+            pair_symbols=pair_symbols,
+            save_output=True,
+            executor=executor,
+        )
 
-    logger.info(
-        "Layer 2 independent passes: "
-        f"{int(layer2_results['layer2_pass'].sum())}"
-    )
+        logger.info(
+            f"Completed "
+            f"{len(backtest_results)} "
+            f"candidate backtests."
+        )
 
-    logger.info(
-        "Running Layer 3: "
-        "historical and synthetic stress..."
-    )
+        # ==================================================================
+        # STAGE 4/6 -- LAYER 1-4 VALIDATION
+        # ==================================================================
+        logger.info(
+            "[4/6] Running Layer 1: "
+            "OOS and parameter sensitivity..."
+        )
 
-    (
-        layer3_results,
-        layer3_historical_results,
-        layer3_synthetic_results,
-    ) = run_layer3_validation(
-        backtest_results=backtest_results,
-        processed_data=processed_data,
-        save_output=True,
-    )
+        (
+            layer1_results,
+            layer1_neighbor_results,
+        ) = run_layer1_validation(
+            backtest_results=backtest_results,
+            processed_data=processed_data,
+            save_output=True,
+            executor=executor,
+        )
 
-    logger.info(
-        "Layer 3 independent passes: "
-        f"{int(layer3_results['layer3_pass'].sum())}"
-    )
+        logger.info(
+            "Layer 1 passes across full tested history: "
+            f"{int(layer1_results['layer1_pass'].sum())}"
+        )
 
-    logger.info(
-        "Running Layer 4: "
-        "statistical validation..."
-    )
+        logger.info(
+            "Running Layer 2: "
+            "walk-forward validation..."
+        )
 
-    (
-        layer4_results,
-        layer4_permutation_results,
-        layer4_bootstrap_results,
-    ) = run_layer4_validation(
-        backtest_results=backtest_results,
-        save_output=True,
-    )
+        (
+            layer2_results,
+            layer2_window_results,
+        ) = run_layer2_validation(
+            backtest_results=backtest_results,
+            processed_data=processed_data,
+            save_output=True,
+            executor=executor,
+        )
 
-    logger.info(
-        "Layer 4 independent passes: "
-        f"{int(layer4_results['layer4_pass'].sum())}"
-    )
+        logger.info(
+            "Layer 2 passes across full tested history: "
+            f"{int(layer2_results['layer2_pass'].sum())}"
+        )
 
-    # ======================================================================
-    # STAGE 5/6 -- FINAL FUNNEL
-    # ======================================================================
-    logger.info("[5/6] Building final funnel...")
+        logger.info(
+            "Running Layer 3: "
+            "historical and synthetic stress..."
+        )
 
-    (
-        final_funnel,
-        final_survivors,
-    ) = build_final_funnel(
-        layer1_results=layer1_results,
-        layer2_results=layer2_results,
-        layer3_results=layer3_results,
-        layer4_results=layer4_results,
-        candidate_metrics=candidate_metrics,
-        save_output=True,
-    )
+        (
+            layer3_results,
+            layer3_historical_results,
+            layer3_synthetic_results,
+        ) = run_layer3_validation(
+            backtest_results=backtest_results,
+            processed_data=processed_data,
+            save_output=True,
+            executor=executor,
+        )
+
+        logger.info(
+            "Layer 3 passes across full tested history: "
+            f"{int(layer3_results['layer3_pass'].sum())}"
+        )
+
+        logger.info(
+            "Running Layer 4: "
+            "statistical validation..."
+        )
+
+        (
+            layer4_results,
+            layer4_permutation_results,
+            layer4_bootstrap_results,
+        ) = run_layer4_validation(
+            backtest_results=backtest_results,
+            official_trial_count=official_trial_count,
+            save_output=True,
+            executor=executor,
+        )
+
+        logger.info(
+            "Layer 4 passes across full tested history: "
+            f"{int(layer4_results['layer4_pass'].sum())}"
+        )
+
+        # ==================================================================
+        # STAGE 5/6 -- FINAL FUNNEL
+        # ==================================================================
+        logger.info("[5/6] Building final funnel...")
+
+        (
+            final_funnel,
+            final_survivors,
+        ) = build_final_funnel(
+            layer1_results=layer1_results,
+            layer2_results=layer2_results,
+            layer3_results=layer3_results,
+            layer4_results=layer4_results,
+            candidate_metrics=candidate_metrics,
+            save_output=True,
+        )
+
+        # ------------------------------------------------------------------
+        # Record this run's test events now that Layer 1-4 pass/fail and
+        # final_pass are all known together for every candidate tested this
+        # run. If anything above raised, execution never reaches this
+        # point, so no events get recorded and every due candidate simply
+        # stays due and is retried next run.
+        # ------------------------------------------------------------------
+        if conn is not None:
+            tested_at = pd.Timestamp.now(tz="UTC").isoformat()
+            due_candidate_ids = set(due_population["candidate_id"])
+
+            events = [
+                test_history.TestEvent(
+                    candidate_id=row.candidate_id,
+                    run_id=run_id,
+                    family=row.family,
+                    symbol=row.symbol,
+                    tested_at=tested_at,
+                    layer1_pass=bool(row.layer1_pass),
+                    layer2_pass=bool(row.layer2_pass),
+                    layer3_pass=bool(row.layer3_pass),
+                    layer4_pass=bool(row.layer4_pass),
+                    final_pass=bool(row.final_pass),
+                )
+                for row in final_funnel.loc[
+                    final_funnel["candidate_id"].isin(due_candidate_ids)
+                ].itertuples()
+            ]
+
+            test_history.record_test_events(conn, events)
+
+            logger.info(
+                f"Recorded {len(events)} test event(s) for run {run_id}."
+            )
+    finally:
+        if executor is not None:
+            executor.shutdown()
+
+        if conn is not None:
+            conn.close()
 
     # ======================================================================
     # STAGE 6/6 -- REPORTING OUTPUTS

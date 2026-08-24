@@ -1,0 +1,2 @@
+parent_candidate_id,neighbor_candidate_id,family,symbol,threshold,oos_net_total_return,oos_net_annual_return,oos_net_sharpe,oos_net_max_drawdown,oos_trade_count
+carry__AUDUSD__threshold-0,carry__AUDUSD__threshold-1,carry,AUDUSD,1.0,0.0,0.0,,0.0,0
