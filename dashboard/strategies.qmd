@@ -1,0 +1,50 @@
+---
+title: "Strategies"
+---
+
+```{python}
+import plotly.express as px
+
+from _dashboard_utils import load_strategies
+
+strategies = load_strategies()
+```
+
+## Row {height="40%"}
+
+```{python}
+#| title: "Candidates per Strategy Family"
+fig = px.bar(
+    strategies.sort_values("candidate_count", ascending=False),
+    x="name",
+    y="candidate_count",
+    color="status",
+    labels={"name": "family", "candidate_count": "candidates"},
+)
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), legend_title_text="")
+fig.show()
+```
+
+## Row {height="60%"}
+
+```{python}
+#| output: asis
+for _, strategy in strategies.iterrows():
+    parameter_grid = ", ".join(
+        f"`{name}`: {values}" for name, values in strategy["parameter_grid"].items()
+    )
+    description = strategy["description"] or "_No description available._"
+
+    print(f"""
+::: {{.card title="{strategy['name']}"}}
+
+**Status:** {strategy['status']} &nbsp;&nbsp; **Enabled:** {strategy['enabled']} &nbsp;&nbsp;
+**Candidates:** {strategy['candidate_count']} &nbsp;&nbsp; **Validated:** {strategy['validated_count']}
+
+{description}
+
+Parameter grid — {parameter_grid}
+
+:::
+""")
+```

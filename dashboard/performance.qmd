@@ -1,0 +1,97 @@
+---
+title: "Performance"
+---
+
+```{python}
+import plotly.express as px
+import plotly.graph_objects as go
+
+from _dashboard_utils import load_portfolio_performance, load_positions, load_validation_results
+
+portfolio_performance = load_portfolio_performance()
+positions = load_positions()
+_, candidates = load_validation_results()
+
+portfolio_live = len(portfolio_performance) > 0
+positions_live = len(positions) > 0
+```
+
+## Row {height="15%"}
+
+```{python}
+#| output: asis
+if not portfolio_live and not positions_live:
+    print("""
+::: {.card title="Not yet available"}
+
+Portfolio Construction, Risk Management, and Paper Trading Execution are
+still in development — this page will populate automatically with a live
+equity curve and current positions once those pipeline stages exist.
+
+:::
+""")
+```
+
+## Row {height="45%"}
+
+```{python}
+#| title: "Portfolio Equity Curve"
+if portfolio_live:
+    fig = px.line(portfolio_performance, x="date", y="equity")
+else:
+    fig = go.Figure()
+    fig.add_annotation(text="No portfolio equity data yet", showarrow=False)
+    fig.update_xaxes(visible=False)
+    fig.update_yaxes(visible=False)
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
+fig.show()
+```
+
+```{python}
+#| title: "Current Positions"
+if positions_live:
+    fig = go.Figure(
+        go.Table(
+            header=dict(values=list(positions.columns), align="left"),
+            cells=dict(values=[positions[column] for column in positions.columns], align="left"),
+        )
+    )
+else:
+    fig = go.Figure()
+    fig.add_annotation(text="No open positions yet", showarrow=False)
+    fig.update_xaxes(visible=False)
+    fig.update_yaxes(visible=False)
+fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+fig.show()
+```
+
+## Row {height="40%"}
+
+::: {.card title="Candidate-level backtest performance (research) — not a live portfolio"}
+
+The charts below summarize historical backtest results across all 216
+individually-tested candidates. They are research diagnostics, not a
+portfolio equity curve — no strategies are currently deployed or combined
+into a live portfolio.
+
+:::
+
+```{python}
+#| title: "Net Sharpe Distribution"
+fig = px.histogram(candidates, x="net_sharpe", color="family", nbins=40)
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), legend_title_text="")
+fig.show()
+```
+
+```{python}
+#| title: "Net Sharpe vs. Max Drawdown"
+fig = px.scatter(
+    candidates,
+    x="net_max_drawdown",
+    y="net_sharpe",
+    color="family",
+    hover_name="candidate_id",
+)
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), legend_title_text="")
+fig.show()
+```

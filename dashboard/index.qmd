@@ -1,0 +1,107 @@
+---
+title: "Overview"
+---
+
+```{python}
+from datetime import datetime, timezone
+
+import plotly.graph_objects as go
+
+from _dashboard_utils import load_market_data_summary, load_strategies, load_validation_results
+
+summary, candidates = load_validation_results()
+strategies = load_strategies()
+market_data = load_market_data_summary()
+
+refreshed_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+```
+
+## Row {height="20%"}
+
+```{python}
+#| content: valuebox
+#| title: "Strategy Families"
+#| icon: diagram-3
+#| color: primary
+len(strategies)
+```
+
+```{python}
+#| content: valuebox
+#| title: "Candidates Generated"
+#| icon: collection
+#| color: primary
+summary["official_candidate_count"]
+```
+
+```{python}
+#| content: valuebox
+#| title: "Final Survivors"
+#| icon: trophy
+dict(
+    value=summary["final_survivor_count"],
+    color="success" if summary["final_survivor_count"] > 0 else "warning",
+)
+```
+
+```{python}
+#| content: valuebox
+#| title: "Best Full-Sample Sharpe"
+#| icon: graph-up
+#| color: primary
+round(summary["best_full_sample_net_sharpe"], 2)
+```
+
+```{python}
+#| content: valuebox
+#| title: "Active Instruments"
+#| icon: bar-chart
+#| color: primary
+len(market_data)
+```
+
+## Row {height="45%"}
+
+### Column {width="60%"}
+
+```{python}
+#| title: "Validation Funnel"
+funnel = summary["funnel"]
+
+fig = go.Figure(
+    go.Funnel(
+        y=[stage["stage"] for stage in funnel],
+        x=[stage["survivors"] for stage in funnel],
+        textinfo="value+percent initial",
+    )
+)
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
+fig.show()
+```
+
+### Column {width="40%"}
+
+::: {.card title="About this pipeline"}
+
+A systematic trading pipeline: market data → feature engineering → strategy
+generation → candidate registry → validation gates → portfolio construction
+→ risk management → paper trading execution → monitoring/dashboard →
+performance analytics.
+
+**Live today:** market data ingestion (IBKR), strategy generation, the
+candidate registry, and all four validation gate layers — the numbers
+above and the Strategies / Validation pages reflect real pipeline output.
+
+**Still in development:** portfolio construction, risk management, and
+paper trading execution have no output yet, so the Performance page is a
+placeholder until those stages exist.
+
+Best full-sample candidate: **`{python} summary["best_full_sample_candidate"]`**
+
+:::
+
+## Row {height="10%"}
+
+::: {.card}
+Data regenerated hourly from the pipeline's `results/` outputs. Page last rendered `{python} refreshed_at`.
+:::

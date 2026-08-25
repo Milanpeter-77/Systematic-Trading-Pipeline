@@ -1,0 +1,30 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Systematic Trading Pipeline"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: data.qmd
+        text: Data Used
+      - href: strategies.qmd
+        text: Strategies
+      - href: validation.qmd
+        text: Validation
+      - href: performance.qmd
+        text: Performance
+
+format:
+  dashboard:
+    theme: cosmo
+    embed-resources: false
+
+jupyter: python3
+
+execute:
+  freeze: false
+  echo: false
+  warning: false

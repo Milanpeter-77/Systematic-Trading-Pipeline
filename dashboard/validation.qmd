@@ -1,0 +1,107 @@
+---
+title: "Validation"
+---
+
+```{python}
+import plotly.express as px
+import plotly.graph_objects as go
+
+from _dashboard_utils import load_validation_results
+
+summary, candidates = load_validation_results()
+```
+
+## Row {height="20%"}
+
+```{python}
+#| content: valuebox
+#| title: "Candidates Evaluated"
+#| icon: collection
+#| color: primary
+summary["official_candidate_count"]
+```
+
+```{python}
+#| content: valuebox
+#| title: "Final Survivors"
+#| icon: trophy
+dict(
+    value=summary["final_survivor_count"],
+    color="success" if summary["final_survivor_count"] > 0 else "warning",
+)
+```
+
+```{python}
+#| content: valuebox
+#| title: "Survival Rate"
+#| icon: percent
+#| color: primary
+f"{summary['final_survival_rate'] * 100:.1f}%"
+```
+
+```{python}
+#| content: valuebox
+#| title: "Best Candidate"
+#| icon: star
+#| color: primary
+summary["best_full_sample_candidate"]
+```
+
+## Row {height="40%"}
+
+```{python}
+#| title: "Validation Funnel"
+funnel = summary["funnel"]
+
+fig = go.Figure(
+    go.Funnel(
+        y=[stage["stage"] for stage in funnel],
+        x=[stage["survivors"] for stage in funnel],
+        textinfo="value+percent initial",
+    )
+)
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
+fig.show()
+```
+
+```{python}
+#| title: "Pass Rate per Gate Layer"
+layer_columns = ["layer1_pass", "layer2_pass", "layer3_pass", "layer4_pass", "final_pass"]
+pass_rates = (candidates[layer_columns].mean() * 100).reset_index()
+pass_rates.columns = ["gate", "pass_rate"]
+
+fig = px.bar(pass_rates, x="gate", y="pass_rate", labels={"pass_rate": "% passing"})
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
+fig.show()
+```
+
+## Row {height="40%"}
+
+```{python}
+#| title: "Top Candidates by Net Sharpe"
+top_candidates = candidates.sort_values("net_sharpe", ascending=False).head(15)
+
+table_columns = [
+    "candidate_id",
+    "family",
+    "symbol",
+    "net_sharpe",
+    "net_max_drawdown",
+    "net_annual_return",
+    "final_pass",
+    "failure_reason",
+]
+display_data = top_candidates[table_columns].round(3)
+
+fig = go.Figure(
+    go.Table(
+        header=dict(values=list(display_data.columns), align="left"),
+        cells=dict(
+            values=[display_data[column] for column in display_data.columns],
+            align="left",
+        ),
+    )
+)
+fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+fig.show()
+```

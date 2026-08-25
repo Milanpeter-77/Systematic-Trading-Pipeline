@@ -1,0 +1,76 @@
+---
+title: "Data Used"
+---
+
+```{python}
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+from _dashboard_utils import load_market_data_summary
+
+market_data = load_market_data_summary()
+```
+
+## Row {height="45%"}
+
+```{python}
+#| title: "Instrument Coverage"
+coverage = market_data.copy()
+coverage["start_timestamp"] = pd.to_datetime(coverage["start_timestamp"])
+coverage["end_timestamp"] = pd.to_datetime(coverage["end_timestamp"])
+
+fig = px.timeline(
+    coverage,
+    x_start="start_timestamp",
+    x_end="end_timestamp",
+    y="symbol",
+    color="asset_class",
+)
+fig.update_yaxes(autorange="reversed", title="")
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
+fig.show()
+```
+
+```{python}
+#| title: "Data Quality Flags per Instrument"
+flags = market_data.melt(
+    id_vars="symbol",
+    value_vars=["extreme_return_count", "extreme_range_count", "unexpected_gap_count"],
+    var_name="flag",
+    value_name="count",
+)
+
+fig = px.bar(flags, x="symbol", y="count", color="flag", barmode="group")
+fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), legend_title_text="")
+fig.show()
+```
+
+## Row {height="45%"}
+
+```{python}
+#| title: "Market Data Summary"
+table_columns = [
+    "symbol",
+    "asset_class",
+    "currency",
+    "exchange",
+    "row_count",
+    "start_timestamp",
+    "end_timestamp",
+    "largest_time_gap_minutes",
+]
+display_data = market_data[table_columns]
+
+fig = go.Figure(
+    go.Table(
+        header=dict(values=list(display_data.columns), align="left"),
+        cells=dict(
+            values=[display_data[column] for column in display_data.columns],
+            align="left",
+        ),
+    )
+)
+fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+fig.show()
+```
