@@ -19,7 +19,7 @@ website:
 
 format:
   dashboard:
-    theme: cosmo
+    theme: lux
     embed-resources: false
 
 jupyter: python3
