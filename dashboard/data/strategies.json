@@ -1,0 +1,118 @@
+[
+  {
+    "name": "trend",
+    "description": "Long-short time-series momentum strategy based on two exponential moving averages.",
+    "enabled": true,
+    "parameter_grid": {
+      "fast_window": [
+        12,
+        24
+      ],
+      "slow_window": [
+        72,
+        120,
+        240
+      ]
+    },
+    "candidate_count": 48,
+    "validated_count": 0,
+    "deployed_candidate_ids": [],
+    "status": "candidate"
+  },
+  {
+    "name": "mean_reversion",
+    "description": "Stateful short-horizon mean-reversion strategy based on a rolling close-price z-score.",
+    "enabled": true,
+    "parameter_grid": {
+      "lookback": [
+        24,
+        48,
+        96
+      ],
+      "entry_z": [
+        1.5,
+        2.0
+      ]
+    },
+    "candidate_count": 48,
+    "validated_count": 0,
+    "deployed_candidate_ids": [],
+    "status": "candidate"
+  },
+  {
+    "name": "momentum",
+    "description": "Time-series momentum strategy based on the sign of a fixed-lookback total return.",
+    "enabled": true,
+    "parameter_grid": {
+      "lookback": [
+        24,
+        48,
+        96
+      ],
+      "threshold": [
+        0.0,
+        0.01
+      ]
+    },
+    "candidate_count": 48,
+    "validated_count": 0,
+    "deployed_candidate_ids": [],
+    "status": "candidate"
+  },
+  {
+    "name": "volatility",
+    "description": "Stateful volatility-breakout strategy based on rolling Bollinger-style bands.",
+    "enabled": true,
+    "parameter_grid": {
+      "window": [
+        20,
+        40
+      ],
+      "num_std": [
+        1.5,
+        2.0,
+        2.5
+      ]
+    },
+    "candidate_count": 48,
+    "validated_count": 0,
+    "deployed_candidate_ids": [],
+    "status": "candidate"
+  },
+  {
+    "name": "stat_arb",
+    "description": "Stateful pairs-trading strategy based on a rolling z-score of a cointegrated pair's spread.",
+    "enabled": true,
+    "parameter_grid": {
+      "lookback": [
+        24,
+        48,
+        96
+      ],
+      "entry_z": [
+        1.5,
+        2.0
+      ]
+    },
+    "candidate_count": 12,
+    "validated_count": 0,
+    "deployed_candidate_ids": [],
+    "status": "candidate"
+  },
+  {
+    "name": "carry",
+    "description": "Stateless FX carry strategy based on the sign of the base-vs-quote short-term policy-rate differential.",
+    "enabled": true,
+    "parameter_grid": {
+      "threshold": [
+        0.0,
+        0.25,
+        0.5
+      ]
+    },
+    "candidate_count": 12,
+    "validated_count": 0,
+    "deployed_candidate_ids": [],
+    "status": "candidate"
+  }
+]
