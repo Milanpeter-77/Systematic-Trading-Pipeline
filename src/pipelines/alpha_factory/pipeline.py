@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import signal
+import time
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -23,7 +25,7 @@ from src.factory.generator import (
     generate_candidates,
 )
 from src.factory.parallel import create_executor, get_worker_market_data, run_parallel_map
-from src.logging_config import configure_logging, get_current_run_id
+from src.logging_config import configure_logging, get_current_run_id, new_run_id
 from src.reporting.figures import save_report_figures
 from src.reporting.report_data import load_report_data
 from src.reporting.summaries import build_report_summary
@@ -1084,7 +1086,7 @@ def run_alpha_factory() -> None:
     logger.info("ALPHA FACTORY PIPELINE")
     logger.info("=" * 72)
 
-    run_id = get_current_run_id()
+    run_id = new_run_id()
 
     config = load_gate_config(VALIDATION_CONFIG_PATH)
     cooldown_config = config["cooldown"]
@@ -1369,14 +1371,70 @@ def run_alpha_factory() -> None:
     )
 
 
+_shutdown_requested = False
+
+
+def _handle_shutdown_signal(signum: int, _frame: Any) -> None:
+    global _shutdown_requested
+
+    _shutdown_requested = True
+
+    logger.info(f"Received signal {signum}; will stop after the current pass.")
+
+
+def _sleep_interruptibly(
+    total_seconds: float,
+    check_interval_seconds: float = 30.0,
+) -> None:
+    """
+    Sleep in small increments so a shutdown signal is noticed within
+    check_interval_seconds instead of only after the full interval elapses.
+    """
+    remaining = total_seconds
+
+    while remaining > 0 and not _shutdown_requested:
+        time.sleep(min(check_interval_seconds, remaining))
+        remaining -= check_interval_seconds
+
+
 def main() -> None:
     """
     Public command-line entry point.
+
+    Runs one pass immediately, then -- if config/validation.yml's `loop:`
+    block has enabled=true -- keeps running, sleeping poll_interval_hours
+    between passes, until interrupted (Ctrl+C or SIGTERM). Each pass
+    re-reads the loop config, so poll_interval_hours can be edited without
+    restarting the process. Set loop.enabled=false for a single one-shot
+    pass (e.g. manual testing).
     """
     log_file_path = configure_logging(PROJECT_ROOT)
     logger.info(f"Logging to {log_file_path}")
 
-    run_alpha_factory()
+    signal.signal(signal.SIGTERM, _handle_shutdown_signal)
+    signal.signal(signal.SIGINT, _handle_shutdown_signal)
+
+    while True:
+        run_alpha_factory()
+
+        if _shutdown_requested:
+            logger.info("Shutdown requested, exiting.")
+            break
+
+        loop_config = load_gate_config(VALIDATION_CONFIG_PATH)["loop"]
+
+        if not loop_config["enabled"]:
+            break
+
+        poll_interval_hours = float(loop_config["poll_interval_hours"])
+        logger.info(
+            f"Pass complete. Sleeping {poll_interval_hours}h until next check."
+        )
+        _sleep_interruptibly(poll_interval_hours * 3600)
+
+        if _shutdown_requested:
+            logger.info("Shutdown requested, exiting.")
+            break
 
 
 if __name__ == "__main__":

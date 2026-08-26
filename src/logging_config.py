@@ -69,6 +69,18 @@ def configure_logging(
     return log_file_path
 
 
+def new_run_id() -> str:
+    """
+    Generate a fresh run id for one pipeline pass, independent of the log
+    file (which is configured once via configure_logging() and persists
+    for the whole process, even across many passes of a long-running loop).
+    """
+    run_id = datetime.now().strftime(LOG_FILENAME_TIMESTAMP_FORMAT)
+    logging.getLogger()._configured_run_id = run_id
+
+    return run_id
+
+
 def get_current_run_id() -> str:
     """
     Return this process's run id -- the same YYYYMMDD_HHMMSS timestamp

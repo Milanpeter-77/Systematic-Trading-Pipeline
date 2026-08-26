@@ -16,6 +16,10 @@ parallelism:
   enabled: true
   max_workers: 2   # conservative default for the weaker always-on machine; 1 forces sequential
 
+loop:
+  enabled: true
+  poll_interval_hours: 24   # cooldown is 30 days, so finer-grained polling wouldn't find anything new anyway
+
 data_quality:
   timeframe: "1h"
 
