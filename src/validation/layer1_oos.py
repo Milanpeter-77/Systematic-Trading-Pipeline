@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from functools import partial
 from itertools import product
@@ -20,9 +19,6 @@ from src.backtest.metrics import (
 from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
 from src.factory.parallel import get_worker_market_data, run_parallel_map
-
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -801,8 +797,6 @@ def run_layer1_gate(
 
     if executor is None:
         for candidate_id, result in backtest_results.items():
-            logger.debug(f"Layer 1: {candidate_id}")
-
             symbol = result.candidate.symbol
 
             record, neighbors = (

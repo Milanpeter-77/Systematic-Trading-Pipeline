@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from dataclasses import dataclass
 from functools import partial
 from typing import Any
@@ -19,9 +18,6 @@ from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
 from src.factory.parallel import get_worker_market_data, run_parallel_map
 from src.validation.layer1_oos import calculate_window_metrics, generate_parameter_neighbors
-
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -700,8 +696,6 @@ def run_layer2_gate(
 
     if executor is None:
         for candidate_id, result in backtest_results.items():
-            logger.debug(f"Layer 2: {candidate_id}")
-
             symbol = result.candidate.symbol
 
             if symbol not in processed_data:

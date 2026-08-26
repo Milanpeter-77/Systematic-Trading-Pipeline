@@ -62,7 +62,6 @@ class HistoricalDataClient(EWrapper, EClient):
         start: str,
         end: str,
     ) -> None:
-        logger.debug(f"Historical request {req_id} completed: {start} to {end}")
         self._historical_complete_event.set()
 
     def error(
@@ -84,7 +83,6 @@ class HistoricalDataClient(EWrapper, EClient):
         }
 
         if error_code in informational_codes:
-            logger.debug(f"IBKR status {error_code}: {error_message}")
             return
 
         self._errors.append(

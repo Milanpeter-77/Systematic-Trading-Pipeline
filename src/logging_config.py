@@ -13,8 +13,9 @@ LOG_FILENAME_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 def configure_logging(
     project_root: Path,
+    pipeline_name: str,
     console_level: int = logging.INFO,
-    file_level: int = logging.DEBUG,
+    file_level: int = logging.INFO,
 ) -> Path:
     """
     Configure the root logger with a console handler and a per-run file handler.
@@ -29,7 +30,7 @@ def configure_logging(
     if existing_log_file is not None:
         return existing_log_file
 
-    log_directory = project_root / "logs"
+    log_directory = project_root / "logs" / pipeline_name
     log_directory.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime(
@@ -37,10 +38,10 @@ def configure_logging(
     )
 
     log_file_path = (
-        log_directory / f"pipeline_{timestamp}.log"
+        log_directory / f"{timestamp}.log"
     )
 
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(min(console_level, file_level))
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(console_level)
@@ -62,6 +63,12 @@ def configure_logging(
 
     root_logger.addHandler(console_handler)
     root_logger.addHandler(file_handler)
+
+    # ibapi logs every request/response at INFO, including the full
+    # historical-bar payload of each answer -- left alone, a single
+    # data-ingestion run turns into tens of thousands of lines of wire-
+    # protocol noise. WARNING+ still surfaces any real ibapi problem.
+    logging.getLogger("ibapi").setLevel(logging.WARNING)
 
     root_logger._configured_log_file = log_file_path
     root_logger._configured_run_id = timestamp

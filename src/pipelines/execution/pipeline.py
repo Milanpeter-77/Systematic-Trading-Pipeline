@@ -74,7 +74,7 @@ def main() -> None:
     to start the execution loop, which currently always raises
     NotImplementedError.
     """
-    log_file_path = configure_logging(PROJECT_ROOT)
+    log_file_path = configure_logging(PROJECT_ROOT, pipeline_name="execution")
     logger.info(f"Logging to {log_file_path}")
     logger.info(
         "Execution engine is not yet implemented -- this will raise "

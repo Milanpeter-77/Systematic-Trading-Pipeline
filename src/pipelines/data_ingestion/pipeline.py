@@ -182,7 +182,7 @@ def prepare_all_data(
         config_path=INSTRUMENT_CONFIG_PATH
     )
 
-    logger.debug(
+    logger.info(
         f"Connecting to IBKR at {IBKR_HOST}:{IBKR_PORT} "
         f"(client id {IBKR_CLIENT_ID})..."
     )
@@ -206,7 +206,7 @@ def prepare_all_data(
         if client.isConnected():
             client.disconnect()
 
-    logger.debug("Disconnected from IBKR.")
+    logger.info("Disconnected from IBKR.")
 
     processed_data: dict[
         str,
@@ -220,7 +220,7 @@ def prepare_all_data(
     for symbol, settings in (
         instrument_config.items()
     ):
-        logger.debug(f"Processing {symbol}...")
+        logger.info(f"Processing {symbol}...")
 
         hourly_data, report = (
             process_instrument(
@@ -255,7 +255,7 @@ def prepare_all_data(
             }
         )
 
-        logger.debug(
+        logger.info(
             f"Finished {symbol}: "
             f"{len(hourly_data):,} H1 bars"
         )
@@ -311,7 +311,7 @@ def main() -> None:
     """
     Public command-line entry point.
     """
-    log_file_path = configure_logging(PROJECT_ROOT)
+    log_file_path = configure_logging(PROJECT_ROOT, pipeline_name="data_ingestion")
     logger.info(f"Logging to {log_file_path}")
 
     run_data_ingestion()

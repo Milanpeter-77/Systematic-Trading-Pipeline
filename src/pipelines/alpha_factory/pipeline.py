@@ -373,11 +373,6 @@ def run_all_candidate_backtests(
                     f"{candidate.symbol}."
                 )
 
-            logger.debug(
-                f"Backtesting "
-                f"{candidate.candidate_id}"
-            )
-
             result = run_candidate_backtest(
                 candidate=candidate,
                 market_data=processed_data[
@@ -1408,7 +1403,7 @@ def main() -> None:
     restarting the process. Set loop.enabled=false for a single one-shot
     pass (e.g. manual testing).
     """
-    log_file_path = configure_logging(PROJECT_ROOT)
+    log_file_path = configure_logging(PROJECT_ROOT, pipeline_name="alpha_factory")
     logger.info(f"Logging to {log_file_path}")
 
     signal.signal(signal.SIGTERM, _handle_shutdown_signal)

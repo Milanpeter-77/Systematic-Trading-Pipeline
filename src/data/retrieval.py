@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import time
 from pathlib import Path
 from typing import Any
@@ -12,9 +11,6 @@ from src.environment import IBKR_DATA_CLIENT_ID, IBKR_HOST, IBKR_PORT
 
 from .ibkr.contracts import build_contract
 from .ibkr.historical import HistoricalDataClient, HistoricalRequest
-
-
-logger = logging.getLogger(__name__)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -147,8 +143,6 @@ def fetch_all_instruments(
     for index, (symbol, settings) in enumerate(
         instrument_config.items()
     ):
-        logger.debug(f"Fetching {symbol} from IBKR...")
-
         bars = fetch_instrument_history(
             client=client,
             symbol=symbol,
@@ -158,8 +152,6 @@ def fetch_all_instruments(
         )
 
         results[symbol] = bars
-
-        logger.debug(f"Fetched {symbol}: {len(bars):,} bars")
 
         if save_output:
             bars.to_parquet(
@@ -242,31 +234,17 @@ def fetch_instrument_history_backfill(
                     "returned no historical bars" in str(error)
                     or "returned no data" in str(error)
                 ):
-                    logger.debug(
-                        f"{symbol}: no more history before "
-                        f"{chunk_end} -- reached the data horizon."
-                    )
                     bars = None
                     break
 
                 if attempt == max_retries - 1:
                     raise
 
-                logger.warning(
-                    f"{symbol} chunk ending {chunk_end} failed "
-                    f"(attempt {attempt + 1}/{max_retries}): {error}. "
-                    "Retrying..."
-                )
                 time.sleep(request_delay_seconds * (attempt + 1))
-            except TimeoutError as error:
+            except TimeoutError:
                 if attempt == max_retries - 1:
                     raise
 
-                logger.warning(
-                    f"{symbol} chunk ending {chunk_end} timed out "
-                    f"(attempt {attempt + 1}/{max_retries}): {error}. "
-                    "Retrying..."
-                )
                 time.sleep(request_delay_seconds * (attempt + 1))
 
         if bars is None or bars.empty:
@@ -276,11 +254,6 @@ def fetch_instrument_history_backfill(
         chunks.append(bars)
 
         earliest_in_chunk = bars["timestamp"].min()
-
-        logger.debug(
-            f"{symbol}: fetched chunk "
-            f"[{earliest_in_chunk}, {chunk_end}], {len(bars):,} bars"
-        )
 
         if earliest_in_chunk <= start:
             break
@@ -398,8 +371,6 @@ def fetch_all_instruments_backfill(
                 symbol_start = max(floor_start, incremental_start)
                 chunk_duration = DEFAULT_INCREMENTAL_CHUNK_DURATION
 
-        logger.info(f"Fetching {symbol} from IBKR (from {symbol_start})...")
-
         price_bars = fetch_instrument_history_backfill(
             client=client,
             symbol=symbol,
@@ -408,8 +379,6 @@ def fetch_all_instruments_backfill(
             chunk_duration=chunk_duration,
             request_id_start=1001 + index * 100,
         )
-
-        logger.info(f"Fetching {symbol} BID_ASK spread from IBKR...")
 
         bid_ask_bars = fetch_instrument_history_backfill(
             client=client,
@@ -448,11 +417,6 @@ def fetch_all_instruments_backfill(
             )
 
         results[symbol] = bars
-
-        logger.info(
-            f"{symbol}: {len(bars):,} bars total, "
-            f"{bars['timestamp'].min()} to {bars['timestamp'].max()}"
-        )
 
         if save_output:
             bars.to_parquet(

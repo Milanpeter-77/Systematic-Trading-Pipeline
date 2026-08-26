@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import logging
 from functools import partial
 from typing import Any
 
@@ -12,9 +11,6 @@ from scipy.stats import kurtosis, norm, skew
 from src.backtest.metrics import infer_periods_per_year
 from src.backtest.result import BacktestResult
 from src.factory.parallel import run_parallel_map
-
-
-logger = logging.getLogger(__name__)
 
 
 def calculate_sharpe(
@@ -1038,10 +1034,6 @@ def run_layer4_gate(
 
     if executor is None:
         for candidate_id in sorted_candidate_ids:
-            logger.debug(
-                f"Layer 4: {candidate_id}"
-            )
-
             result = backtest_results[
                 candidate_id
             ]
