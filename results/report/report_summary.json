@@ -1,5 +1,5 @@
 {
-  "official_candidate_count": 216,
+  "official_candidate_count": 232,
   "final_survivor_count": 0,
   "final_survival_rate": 0.0,
   "best_full_sample_candidate": "volatility__USDJPY__num_std-2p5__window-20",
@@ -7,11 +7,11 @@
   "funnel": [
     {
       "stage": "Generated",
-      "survivors": 216
+      "survivors": 232
     },
     {
       "stage": "Layer 1",
-      "survivors": 30
+      "survivors": 31
     },
     {
       "stage": "Layer 2",
