@@ -38,7 +38,7 @@ class MomentumStrategy(BaseStrategy):
     family_name = "momentum"
     parameter_names = ("lookback", "threshold")
     parameter_grid = {
-        "lookback": [24, 48, 96],
+        "lookback": [24, 36, 48, 96],
         "threshold": [0.0, 0.01],
     }
     enabled = True
