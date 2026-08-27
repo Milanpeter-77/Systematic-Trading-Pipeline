@@ -143,6 +143,8 @@ The analysis does not model market impact, order-book depth, latency/slippage be
 
 **Milan Peter**
 
-MSc Finance -- Honours Programme of Quantitative Finance 
-MSc Econometrics and Operations Research -- Financial Econometrics Track
+MSc Finance - Honours Programme of Quantitative Finance
+
+MSc Econometrics and Operations Research - Financial Econometrics Track
+
 Vrije Universiteit Amsterdam
