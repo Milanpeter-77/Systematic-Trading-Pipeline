@@ -1,369 +1,147 @@
-# The Alpha Factory
+# Systematic Trading Pipeline
 
-A compact, reproducible quantitative research pipeline that generates systematic trading-strategy candidates and evaluates every candidate through a four-layer validation gate.
+A research and validation platform for systematic trading strategies: it pulls live market data from Interactive Brokers and FRED, generates strategy candidates across several economically distinct families, and puts every candidate through a four-layer statistical validation gate before it's allowed to survive. The objective is not to find the strategy with the best-looking equity curve, but to run a research process that rejects fragile strategies transparently and reproducibly.
 
-The project was developed for the Clarion Capital Quant Research candidate assignment. The objective is not to select the strategy with the most attractive historical equity curve, but to build a research process that rejects fragile strategies transparently and reproducibly.
+The project began as a quant-research candidate assignment (a four-instrument, two-strategy-family backtest over static MetaTrader data). It has since grown into a live, continuously-running platform: it ingests fresh data from a real IBKR account every hour, evaluates a much larger candidate population across six strategy families, and publishes results to a public dashboard automatically.
 
-## Project overview
+## Architecture
 
-The factory evaluates two economically distinct strategy families across four instruments:
+Three independent pipelines, each with its own entry point under `scripts/`:
 
-- **Trend following:** exponential moving-average crossover
-- **Mean reversion:** rolling close-price z-score strategy
-- **Instruments:** ETHUSD, SPXUSD, USDJPY, and XAUUSD
-- **Input frequency:** one-minute MetaTrader-style OHLC data
-- **Research frequency:** hourly bars
-- **Official candidate population:** 48 strategies
-- **Execution:** signal at the close of bar t, fill at the next available bar
-- **Costs:** realized bid-ask spread plus 0.5 basis points commission per side
+- **Data ingestion** (`scripts/run_data_ingestion.py`) — connects to IBKR TWS/Gateway, fetches and validates historical bars for every configured instrument, and pulls interest-rate data from FRED for FX carry features. A one-shot script: it runs once, does an incremental top-up (not a full re-backfill) if data already exists, and exits. Safe to run hourly.
+- **Alpha factory** (`scripts/run_alpha_factory.py`) — generates the candidate population from the configured strategy families and parameter grids, backtests every candidate, and runs it through the four-layer validation gate described below. Built as a long-running daemon: it runs one pass immediately, then (per `config/validation.yml`) sleeps and repeats on an interval, until stopped.
+- **Execution** (`scripts/run_execution.py`) — scaffolding for eventually acting on validated candidates (live or paper trading). Not yet built out; a future milestone once the research side is mature.
 
-Every official candidate is evaluated independently by all four gate layers. The final survivor set is the intersection of the four independent pass decisions.
+## Strategy families and instruments
+
+Six strategy families currently exist under `src/strategies/`: **trend following**, **mean reversion**, **momentum**, **statistical arbitrage**, **volatility**, and **carry**. Each subclasses `BaseStrategy` (`src/strategies/base.py`) and declares its own parameter grid.
+
+Eight instruments are currently active in `config/instruments.yml`:
+
+| Instrument | Asset class | Notes |
+|---|---|---|
+| USDJPY, EURUSD, GBPUSD, AUDUSD | FX | IBKR `IDEALPRO`, midpoint, 24/5 |
+| XAUUSD, XAGUSD | Commodities (spot metals) | IBKR `SMART`, midpoint, 24/5 |
+| VOD, SAP | Equities | IBKR `SMART`, regular trading hours |
+
+A further five instruments (SPXUSD, DAX, AAPL, ETHUSD, BTCUSD) are defined but disabled in the same config, each with a documented, empirically-confirmed reason: US equities/indices and DAX need a separate live-market-data API subscription beyond what's needed for TWS-UI viewing (IBKR error 2188/10089), and PAXOS crypto currently has no market-data permission on the account at all. `tests/integration/test_ibkr_subscriptions.py` re-confirms these before anything gets re-enabled.
 
 ## Validation gate
 
-### Layer 1 — Chronological OOS and parameter sensitivity
+Every candidate in the population is evaluated independently by all four layers; the survivor set is the intersection of the four independent pass decisions. Thresholds are declared in `config/validation.yml` before execution and are not relaxed after seeing results.
 
-- Fixed chronological in-sample/out-of-sample split
-- Net OOS return and Sharpe requirements
-- Minimum trade count
-- Profit-concentration diagnostic
-- Neighbour robustness under ±20% parameter perturbations
+**Layer 1 — Chronological OOS and parameter sensitivity.** Fixed in-sample/out-of-sample split, net OOS return and Sharpe requirements, minimum trade count, profit-concentration diagnostic, neighbor robustness under ±20% parameter perturbation.
 
-### Layer 2 — Rolling walk-forward re-optimization
+**Layer 2 — Rolling walk-forward re-optimization.** 104-week training windows, 26-week non-overlapping test windows, local parameter re-selection on training data only, frozen parameters evaluated on the immediately following fold, concatenated OOS metrics for the pass/fail decision.
 
-- 104-week training window with 26-week non-overlapping test windows
-- Local parameter re-selection using training data only
-- Frozen selected parameters evaluated only on the immediately following test fold
-- Concatenated out-of-sample test-path metrics for pass/fail decisions
-- Trade-count and drawdown requirements
+**Layer 3 — Historical and synthetic stress.** March 2020 replay, instrument-specific worst historical windows, 1.5× gross-return stress with 2× realized spread costs, pre-specified return/drawdown/terminal-NAV limits.
 
-### Layer 3 — Historical and synthetic stress
+**Layer 4 — Statistical validation.** Circular-shift permutation test (2000 draws), trade-sequence bootstrap (5000 draws), and Deflated Sharpe Ratio, all adjusted for the size of the full candidate population (computed dynamically, not hardcoded).
 
-- March 2020 stress replay
-- Instrument-specific worst rolling historical windows
-- 1.5× gross-return stress
-- 2× realized spread costs
-- Pre-specified return, drawdown, and terminal-NAV limits
-
-### Layer 4 — Statistical validation
-
-- Circular-shift permutation test
-- Trade-sequence bootstrap
-- Deflated Sharpe Ratio
-- Adjustment for the full population of 48 official trials
+A cooldown (`config/validation.yml`, 30 days per candidate) prevents re-testing the same candidate on every pass — this is also why the alpha-factory's poll interval is set to 24h rather than something finer-grained.
 
 ## Repository structure
 
 ```text
 .
-├── config/
-│   ├── gate.yml
-│   ├── instruments.yml
-│   └── strategies.yml
-├── data/
-│   └── raw/
-├── notebooks/
-│   └── pipeline.ipynb
-├── report/
-│   └── alpha_factory_report.tex
-├── results/
-│   ├── backtests/
-│   ├── validation/
-│   └── report/
-├── scripts/
-│   └── run_pipeline.py
+├── bin/                       # deployment wrapper scripts (Mac mini automation, see below)
+├── config/                    # instruments.yml, strategies.yml, validation.yml
+├── dashboard/                 # Quarto site (index/performance/strategies/validation/data), published to GitHub Pages
+├── data/                      # local-only, gitignored -- raw/processed market data
+├── logs/                      # local-only, gitignored -- per-run pipeline logs
+├── results/                   # candidates/backtests/validation/data_quality/report/state -- mostly committed to git
+├── scripts/                   # the three entry points described above
 ├── src/
+│   ├── pipelines/             # data_ingestion, alpha_factory, execution
+│   ├── strategies/            # base.py + one subdirectory per family
+│   ├── data/                  # IBKR + FRED clients, retrieval, cleaning
 │   ├── backtest/
-│   ├── data/
-│   ├── factory/
-│   ├── gate/
-│   ├── reporting/
-│   └── pipeline.py
+│   ├── validation/            # the four gate layers
+│   ├── factory/                # candidate population construction, promotion CLI
+│   ├── portfolio/
+│   ├── risk/
+│   └── reporting/
+├── tests/integration/         # requires a live IBKR connection
 ├── pyproject.toml
 └── README.md
 ```
 
-## Installation
+## Setup
 
-Python 3.11 or later is recommended.
-
-Create and activate a virtual environment:
+Requires Python 3.11+ (currently run under 3.12 and 3.13 in different environments; nothing version-specific beyond the floor).
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 ```
 
-On Windows:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-```
-
-Install the project and its dependencies:
+**`ibapi` needs a manual step.** IBKR's official Python client is pinned to `ibapi==10.45.1` in `pyproject.toml`, but that version isn't published on PyPI (only an old unofficial `9.81.1.post1` mirror exists there). Install it from IBKR's own TWS API download first, *then* install the rest:
 
 ```bash
-pip install --upgrade pip
+pip install "/path/to/IBJts/source/pythonclient"   # from the TWS API installer, IBKR_VersionNum.txt etc.
 pip install -e .
 ```
 
-## Input data
+If `ibapi==10.45.1` is already installed and satisfied, `pip install -e .` won't try to fetch it from PyPI at all.
 
-Place the four original MetaTrader-style files in:
+Create a `.env` in the repo root (no template ships — these are the names `src/environment.py` reads):
 
-```text
-data/raw/
+```
+FRED_API_KEY=...           # required
+IBKR_HOST=127.0.0.1        # default
+IBKR_PORT=7497              # 7497 = paper TWS, 7496 = live -- never default to live
+IBKR_DATA_CLIENT_ID=2       # default
 ```
 
-Expected instruments:
+Ingestion requires TWS or IB Gateway running and logged in locally at `IBKR_HOST:IBKR_PORT`; it fails fast (~10s timeout) rather than hanging if it can't connect.
 
-```text
-ETHUSD
-SPXUSD
-USDJPY
-XAUUSD
-```
-
-The loader expects tab-separated files with fields equivalent to:
-
-```text
-<DATE> <TIME> <OPEN> <HIGH> <LOW> <CLOSE> <TICKVOL> <VOL> <SPREAD>
-```
-
-The configuration in `config/instruments.yml` should contain the filename and tick-size mapping for each instrument.
-
-## Run the complete pipeline
-
-From the repository root, run:
+## Running the pipelines manually
 
 ```bash
-python scripts/run_pipeline.py
+python scripts/run_data_ingestion.py     # one pass, safe to re-run any time
+python scripts/run_alpha_factory.py      # one pass, then loops per config/validation.yml's `loop:` block
+python -m src.pipelines.data_ingestion   # equivalent module form
 ```
 
-Typical runtime on a laptop for the full 48-candidate pipeline is several minutes, mainly driven by Layer 4 permutation and bootstrap validation.
+Set `loop.enabled: false` in `config/validation.yml` to make alpha-factory a one-shot run for manual testing.
 
-The runner calls:
+## The dashboard
 
-```python
-from src.pipeline import main
-main()
-```
+`dashboard/` is a Quarto site (`index.qmd`, `performance.qmd`, `strategies.qmd`, `validation.qmd`, `data.qmd`) built from `results/` via `dashboard/export_dashboard_data.py`. `.github/workflows/dashboard.yml` runs this build hourly on GitHub's own runners (`workflow_dispatch` also available for an on-demand rebuild) and publishes to GitHub Pages via the `gh-pages` branch. This workflow only ever reads whatever is currently committed to `results/` on `main` — it doesn't run any pipeline itself, so it's only as fresh as the last push (see below).
 
-Therefore, `src/pipeline.py` must expose a public `main()` function.
+## Deployment: continuous operation
 
-A typical orchestration function is:
+The pipelines run continuously on a dedicated always-on Mac mini, separate from the primary development machine, at `~/Developer/Systematic-Trading-Pipeline` — deliberately *outside* `~/Documents`, since that folder is iCloud-synced on both machines and constant writes from a running pipeline would conflict with active development happening elsewhere. The Mac mini's clone tracks GitHub directly rather than relying on file sync.
 
-```python
-def main() -> None:
-    processed_data = load_and_prepare_all_instruments()
+Three `launchd` LaunchAgents (`~/Library/LaunchAgents/com.milanpeter.tradingpipeline.*.plist`) drive everything:
 
-    candidate_population = build_candidate_population()
+- **`pulldeploy`** (every 5 min) — `git fetch` + fast-forward-only pull if `origin/main` has moved. Never merges, rebases, or force-anything; if history has diverged it logs an error and leaves the working tree alone rather than guessing. If a pull actually changes code, it restarts the alpha-factory agent (`launchctl kickstart`), since a long-running process won't notice new code on disk on its own.
+- **`ingestionpublish`** (hourly, `:00`) — fast-forward safety net, one ingestion pass, log rotation/pruning, then `git add results/` + commit + push if anything changed. This is what keeps the GitHub Actions dashboard build fed with fresh data — nothing else pushes `results/` to GitHub.
+- **`alphafactory`** (persistent, `RunAtLoad` + `KeepAlive`) — the daemon started once and left running; `launchd` restarts it automatically if it crashes. Stopping it intentionally requires `launchctl bootout` (not just killing the process), since `KeepAlive` would otherwise relaunch it.
 
-    candidate_metrics, backtest_results = run_all_candidate_backtests(
-        candidates=candidate_population,
-        processed_data=processed_data,
-        save_output=True,
-    )
+`bin/pull_and_deploy.sh` and `bin/run_ingestion_and_publish.sh` implement the two scheduled jobs (the `.plist` files themselves stay local to the Mac mini, since their absolute paths are machine-specific). Both share a `/tmp`-based lock so they never run `git` concurrently against the same working tree.
 
-    layer1_results, layer1_neighbors = run_layer1_validation(
-        backtest_results=backtest_results,
-        processed_data=processed_data,
-        save_output=True,
-    )
+**What a push from the dev machine triggers:** within ~5 minutes, `pulldeploy` fast-forwards the Mac mini's clone. Ingestion picks up the change automatically on its next hourly run (it's a fresh process each time). Alpha-factory gets an explicit restart from the poller, since it's one long-running process. The one gap: a new/changed dependency in `pyproject.toml` is *not* automatically reinstalled into the Mac mini's venv — that still needs a manual `pip install -e .` there if a pushed change adds an import.
 
-    layer2_results, layer2_windows = run_layer2_validation(
-        backtest_results=backtest_results,
-        processed_data=processed_data,
-        save_output=True,
-    )
+**Monitoring:** each job's `launchd`-level output goes to `~/Library/Logs/SystematicTradingPipeline/{pulldeploy,ingestion_publish,alphafactory}.log`; each pipeline's own detailed, timestamped log goes to `logs/{data_ingestion,alpha_factory}/` inside the repo. `tail -f` either from a Terminal on the Mac (locally or via Screen Sharing).
 
-    (
-        layer3_results,
-        layer3_historical,
-        layer3_synthetic,
-    ) = run_layer3_validation(
-        backtest_results=backtest_results,
-        processed_data=processed_data,
-        save_output=True,
-    )
+## Roadmap
 
-    (
-        layer4_results,
-        layer4_permutations,
-        layer4_bootstraps,
-    ) = run_layer4_validation(
-        backtest_results=backtest_results,
-        save_output=True,
-    )
-
-    build_final_funnel(
-        layer1_results=layer1_results,
-        layer2_results=layer2_results,
-        layer3_results=layer3_results,
-        layer4_results=layer4_results,
-        save_output=True,
-    )
-
-    build_reporting_outputs(
-        save_output=True,
-    )
-
-
-if __name__ == "__main__":
-    main()
-```
-
-The exact argument names should match the functions implemented in `src/pipeline.py`. The key requirement is that `main()` executes the workflow in this order:
-
-1. Load and clean the input data
-2. Resample minute data to hourly bars
-3. Generate the 48 official candidates
-4. Backtest every candidate
-5. Run Layers 1–4 independently
-6. Build the final intersection funnel
-7. Save reporting tables and figures
-
-The pipeline can also be run directly as a module:
-
-```bash
-python -m src.pipeline
-```
-
-## Main outputs
-
-### Backtest results
-
-```text
-results/backtests/candidate_metrics.csv
-```
-
-Candidate-level time series and trades may additionally be stored as Parquet files.
-
-### Validation results
-
-```text
-results/validation/layer1_results.csv
-results/validation/layer1_neighbor_results.csv
-results/validation/layer2_results.csv
-results/validation/layer2_window_results.csv
-results/validation/layer3_results.csv
-results/validation/layer3_historical_stress_results.csv
-results/validation/layer3_synthetic_stress_results.csv
-results/validation/layer4_results.csv
-results/validation/layer4_permutation_results.parquet
-results/validation/layer4_bootstrap_results.parquet
-results/validation/final_funnel.csv
-results/validation/final_survivors.csv
-```
-
-### Report outputs
-
-```text
-results/report/report_summary.json
-results/report/tables/
-results/report/figures/
-```
-
-## Reproducibility
-
-Random procedures use fixed, candidate-specific seeds derived from the base seed in `config/gate.yml`.
-
-The pipeline is designed so that:
-
-- candidate definitions are configuration driven;
-- all gate thresholds are declared before execution;
-- all 48 official candidates are evaluated by every layer independently;
-- parameter neighbours are robustness diagnostics rather than additional official trials;
-- final survival is calculated only after all independent layer decisions are available;
-- an empty survivor set is treated as a valid result.
-
-## Add a new strategy family
-
-The factory was designed so adding a third family is cheap, but it still requires a few explicit integrssssssation points.
-
-1. Create the strategy class under `src/factory/strategies/`.
-2. Inherit from `BaseStrategy` in `src/factory/base.py`.
-3. Define `family_name`, `parameter_names`, and implement `generate_positions()`.
-4. Register the class in `src/factory/registry.py` so `create_strategy()` can instantiate it.
-5. Declare `parameter_grid` and `enabled` as class attributes on the new strategy class, alongside `family_name` and `parameter_names`.
-6. Run `python scripts/run_pipeline.py` and confirm candidate generation plus all four layers execute.
-
-Important: Layer 1 neighbor robustness currently has family-specific parameter perturbation logic for `trend` and `mean_reversion` in `src/validation/layer1_oos.py`. When adding a new family, extend that branch so Layer 1 can generate valid neighbor candidates instead of raising an unsupported-family error.
-
-## Run the notebook
-
-The notebook was used during development for testing, debugging, and step-by-step validation. It is not required to run the factory pipeline:
-
-```bash
-jupyter lab notebooks/pipeline.ipynb
-```
-
-For the cleanest reproducibility check:
-
-1. Restart the notebook kernel
-2. Clear all outputs
-3. Run all cells from top to bottom
-4. Confirm that all integrity assertions pass
-
-The command-line pipeline is the authoritative reproducibility route; the notebook is a development-time diagnostic and explanatory record.
-
-## Compile the report
-
-From the repository root:
-
-```bash
-pdflatex report/alpha_factory_report.tex
-pdflatex report/alpha_factory_report.tex
-```
-
-The report is limited to six pages and summarizes the architecture, pre-registered gate, attrition funnel, per-layer findings, statistical validation, and final verdict.
-
-## Tests
-
-Run the automated tests with:
-
-```bash
-pytest
-```
-
-Recommended test coverage includes:
-
-- chronological signal and execution alignment;
-- transaction-cost calculation;
-- low-coverage execution blocking;
-- candidate-count and ID uniqueness;
-- parameter-neighbour generation;
-- non-overlapping walk-forward windows;
-- stress-return identities;
-- reproducibility of permutation and bootstrap procedures;
-- final-funnel intersection logic.
-
-## Design principles
-
-The implementation follows four main principles:
-
-1. **No lookahead:** signals use only closed bars and are executed on the next bar.
-2. **Explicit costs:** every position change is charged the realized spread and commission.
-3. **Independent validation:** every layer evaluates the complete official candidate population.
-4. **Honest attrition:** thresholds are not relaxed after observing the results.
+- **More asset classes.** Extend `config/instruments.yml` and the IBKR contract builders to cover futures, options, bonds, and CFDs, alongside the currently FX/commodity/equity-only coverage.
+- **Re-enable the currently-disabled instruments** (SPXUSD, DAX, AAPL, ETHUSD, BTCUSD) once the underlying IBKR market-data subscriptions are sorted out on the account.
+- **Carry-specific data.** Carry strategies currently run on price data alone; forward/swap-implied carry data is planned so they have a proper economic signal to trade on, rather than a price-only proxy.
+- **Unit test coverage.** `tests/integration/` (requires live IBKR) exists; `tests/unit/` is currently empty and is a real gap, particularly around the validation-gate math.
+- **Execution pipeline.** `scripts/run_execution.py` is scaffolding today; building this out is the natural next step once enough candidates have survived the gate.
+- **Deployment hardening,** roughly in order of likely payoff: enabling Automatic Login on the Mac mini so the LaunchAgents survive a reboot unattended; a dependency lockfile (`pip freeze > requirements-lock.txt`) so venv rebuilds are reproducible; IBC (IBController) for automated TWS login, removing the last manual step in the ingestion chain; and, if 5-minute pull latency ever becomes a real problem, a GitHub Actions self-hosted runner on the Mac mini for push-triggered (rather than polled) deploys.
 
 ## Limitations
 
-The analysis does not model:
-
-- market impact;
-- order-book depth;
-- latency and slippage beyond the observed spread;
-- financing, swaps, or instrument-specific carry;
-- portfolio construction across survivors;
-- live or paper-trading performance.
-
-The results should therefore be interpreted as a validation study of research candidates, not as evidence of immediate production readiness.
+The analysis does not model market impact, order-book depth, latency/slippage beyond the observed spread, or portfolio construction across survivors. Results should be read as a validation study of research candidates, not as evidence of production readiness — that's what the execution pipeline and further live/paper-trading evaluation are for.
 
 ## Author
 
 **Milan Peter**
 
-Quantitative Finance MSc  
+Quantitative Finance MSc
 Vrije Universiteit Amsterdam
