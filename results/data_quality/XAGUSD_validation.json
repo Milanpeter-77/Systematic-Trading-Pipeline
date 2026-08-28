@@ -4,9 +4,9 @@
   "expected_session": "24/5",
   "tick_size": 0.001,
   "symbol": "XAGUSD",
-  "row_count": 39349,
+  "row_count": 39350,
   "start_timestamp": "2020-01-02T00:00:00+00:00",
-  "end_timestamp": "2026-08-28T08:00:00+00:00",
+  "end_timestamp": "2026-08-28T09:00:00+00:00",
   "invalid_timestamp_count": 0,
   "duplicate_timestamp_rows": 0,
   "missing_required_value_count": 0,
@@ -18,5 +18,5 @@
   "largest_time_gap_minutes": 4620.0,
   "removed_invalid_rows": 0,
   "duplicate_rows_identified": 0,
-  "rows_after_cleaning": 39349
+  "rows_after_cleaning": 39350
 }
