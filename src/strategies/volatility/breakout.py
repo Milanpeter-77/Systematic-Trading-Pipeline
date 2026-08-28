@@ -25,24 +25,32 @@ class VolatilityBreakoutStrategy(BaseStrategy):
     num_std
         Number of standard deviations from the rolling mean that defines
         the breakout band.
+    exit_num_std
+        Number of standard deviations from the rolling mean at which an
+        open position is closed. Set below num_std to exit before price
+        fully reverts to the mean (a partial-reversion exit);
+        exit_num_std=0 reproduces exiting exactly at the mean.
 
     Fixed design choices
     --------------------
     - Enter long when close breaks above rolling_mean + num_std * rolling_std.
     - Enter short when close breaks below rolling_mean - num_std * rolling_std.
-    - Exit a long position when close falls back to or below rolling_mean.
-    - Exit a short position when close rises back to or above rolling_mean.
+    - Exit a long position when close falls back to or below
+      rolling_mean + exit_num_std * rolling_std.
+    - Exit a short position when close rises back to or above
+      rolling_mean - exit_num_std * rolling_std.
     - Hold the current position between entry and exit.
     - Trades with the breakout, unlike the existing z-score mean-reversion
       strategy, which fades it.
-    - No stop-loss, holding-period, or separate exit parameter.
+    - No stop-loss or holding-period parameter.
     """
 
     family_name = "volatility"
-    parameter_names = ("window", "num_std")
+    parameter_names = ("window", "num_std", "exit_num_std")
     parameter_grid = {
-        "window": [20, 40],
-        "num_std": [1.5, 2.0, 2.5],
+        "window": [20, 40, 80],
+        "num_std": [1.5, 2.0, 2.5, 3.0],
+        "exit_num_std": [0.0, 0.5],
     }
     enabled = True
 
@@ -51,6 +59,7 @@ class VolatilityBreakoutStrategy(BaseStrategy):
 
         window = self.parameters["window"]
         num_std = self.parameters["num_std"]
+        exit_num_std = self.parameters["exit_num_std"]
 
         if not isinstance(window, int):
             raise TypeError("window must be an integer.")
@@ -64,6 +73,14 @@ class VolatilityBreakoutStrategy(BaseStrategy):
         if num_std <= 0:
             raise ValueError("num_std must be positive.")
 
+        if not isinstance(exit_num_std, (int, float)):
+            raise TypeError("exit_num_std must be numeric.")
+
+        if not 0 <= exit_num_std < num_std:
+            raise ValueError(
+                "exit_num_std must satisfy 0 <= exit_num_std < num_std."
+            )
+
     def generate_positions(
         self,
         data: pd.DataFrame,
@@ -72,6 +89,7 @@ class VolatilityBreakoutStrategy(BaseStrategy):
 
         window = self.parameters["window"]
         num_std = float(self.parameters["num_std"])
+        exit_num_std = float(self.parameters["exit_num_std"])
 
         result = data.copy()
 
@@ -87,6 +105,12 @@ class VolatilityBreakoutStrategy(BaseStrategy):
 
         upper_band = result["rolling_mean"] + num_std * result["rolling_std"]
         lower_band = result["rolling_mean"] - num_std * result["rolling_std"]
+        exit_upper_band = (
+            result["rolling_mean"] + exit_num_std * result["rolling_std"]
+        )
+        exit_lower_band = (
+            result["rolling_mean"] - exit_num_std * result["rolling_std"]
+        )
 
         target_positions = np.zeros(
             len(result),
@@ -99,12 +123,16 @@ class VolatilityBreakoutStrategy(BaseStrategy):
         mean_values = result["rolling_mean"].to_numpy()
         upper_values = upper_band.to_numpy()
         lower_values = lower_band.to_numpy()
+        exit_upper_values = exit_upper_band.to_numpy()
+        exit_lower_values = exit_lower_band.to_numpy()
 
         for index in range(len(result)):
             close = close_values[index]
             mean = mean_values[index]
             upper = upper_values[index]
             lower = lower_values[index]
+            exit_upper = exit_upper_values[index]
+            exit_lower = exit_lower_values[index]
 
             if not np.isfinite(mean):
                 current_position = 0
@@ -118,11 +146,11 @@ class VolatilityBreakoutStrategy(BaseStrategy):
                     current_position = -1
 
             elif current_position == 1:
-                if close <= mean:
+                if close <= exit_upper:
                     current_position = 0
 
             elif current_position == -1:
-                if close >= mean:
+                if close >= exit_lower:
                     current_position = 0
 
             target_positions[index] = current_position

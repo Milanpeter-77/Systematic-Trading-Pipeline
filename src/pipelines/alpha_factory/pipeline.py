@@ -25,6 +25,7 @@ from src.factory.generator import (
     generate_candidates,
 )
 from src.factory.parallel import create_executor, get_worker_market_data, run_parallel_map
+from src.factory.registry import STRATEGY_REGISTRY
 from src.logging_config import configure_logging, get_current_run_id, new_run_id
 from src.reporting.figures import save_report_figures
 from src.reporting.report_data import load_report_data
@@ -226,10 +227,14 @@ def build_candidate_population(
         )
     )
 
-    # carry only has an interest_rate_differential column (added during
-    # ingestion, see add_interest_rate_differential) for CASH/FX
-    # instruments -- every other family, plus stat_arb's pair-spread
-    # pseudo-instruments, keeps its own separate symbol universe.
+    # carry (and every carry_* variant) only has an interest_rate_
+    # differential column (added during ingestion, see
+    # add_interest_rate_differential) for CASH/FX instruments -- every
+    # other family, plus stat_arb (and every stat_arb_* variant)'s
+    # pair-spread pseudo-instruments, keeps its own separate symbol
+    # universe. Routing by name prefix (rather than one literal entry per
+    # registered strategy) means new carry_*/stat_arb_* strategies are
+    # covered automatically as they're added to STRATEGY_REGISTRY.
     fx_symbols = [
         symbol
         for symbol, settings in instrument_config.items()
@@ -239,10 +244,14 @@ def build_candidate_population(
     family_symbol_overrides: dict[str, list[str]] = {}
 
     if fx_symbols:
-        family_symbol_overrides["carry"] = fx_symbols
+        for family in STRATEGY_REGISTRY:
+            if family == "carry" or family.startswith("carry_"):
+                family_symbol_overrides[family] = fx_symbols
 
     if pair_symbols:
-        family_symbol_overrides["stat_arb"] = pair_symbols
+        for family in STRATEGY_REGISTRY:
+            if family == "stat_arb" or family.startswith("stat_arb_"):
+                family_symbol_overrides[family] = pair_symbols
 
     candidates = generate_candidates(
         symbols=list(

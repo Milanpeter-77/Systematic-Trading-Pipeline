@@ -26,6 +26,11 @@ class PairsZScoreStrategy(BaseStrategy):
         Rolling window used to estimate the local spread mean and volatility.
     entry_z
         Absolute z-score required to enter a contrarian position.
+    exit_z
+        Absolute z-score at which an open position is closed. Set below
+        entry_z to exit before the spread fully reverts to its mean (a
+        partial-reversion exit); exit_z=0 reproduces exiting exactly at
+        the mean.
 
     Fixed design choices
     --------------------
@@ -35,19 +40,20 @@ class PairsZScoreStrategy(BaseStrategy):
       is fixed at screening time, not re-estimated per bar.
     - Enter long the spread when z <= -entry_z.
     - Enter short the spread when z >= entry_z.
-    - Exit a long position when z >= 0.
-    - Exit a short position when z <= 0.
+    - Exit a long position when z >= -exit_z.
+    - Exit a short position when z <= exit_z.
     - Hold the current position between entry and exit.
-    - No stop-loss, holding-period, or separate exit parameter -- identical
+    - No stop-loss or holding-period parameter -- otherwise identical
       mechanics to mean_reversion's zscore.py, applied to a spread instead
       of a raw price.
     """
 
     family_name = "stat_arb"
-    parameter_names = ("lookback", "entry_z")
+    parameter_names = ("lookback", "entry_z", "exit_z")
     parameter_grid = {
-        "lookback": [24, 48, 96],
-        "entry_z": [1.5, 2.0],
+        "lookback": [24, 48, 96, 168],
+        "entry_z": [1.5, 2.0, 2.5],
+        "exit_z": [0.0, 0.5],
     }
     enabled = True
 
@@ -56,6 +62,7 @@ class PairsZScoreStrategy(BaseStrategy):
 
         lookback = self.parameters["lookback"]
         entry_z = self.parameters["entry_z"]
+        exit_z = self.parameters["exit_z"]
 
         if not isinstance(lookback, int):
             raise TypeError("lookback must be an integer.")
@@ -69,6 +76,12 @@ class PairsZScoreStrategy(BaseStrategy):
         if entry_z <= 0:
             raise ValueError("entry_z must be positive.")
 
+        if not isinstance(exit_z, (int, float)):
+            raise TypeError("exit_z must be numeric.")
+
+        if not 0 <= exit_z < entry_z:
+            raise ValueError("exit_z must satisfy 0 <= exit_z < entry_z.")
+
     def generate_positions(
         self,
         data: pd.DataFrame,
@@ -77,6 +90,7 @@ class PairsZScoreStrategy(BaseStrategy):
 
         lookback = self.parameters["lookback"]
         entry_z = float(self.parameters["entry_z"])
+        exit_z = float(self.parameters["exit_z"])
 
         result = data.copy()
 
@@ -120,11 +134,11 @@ class PairsZScoreStrategy(BaseStrategy):
                     current_position = -1
 
             elif current_position == 1:
-                if z_score >= 0:
+                if z_score >= -exit_z:
                     current_position = 0
 
             elif current_position == -1:
-                if z_score <= 0:
+                if z_score <= exit_z:
                     current_position = 0
 
             target_positions[index] = current_position

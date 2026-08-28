@@ -368,6 +368,9 @@ def generate_parameter_neighbors(
                 "entry_z": float(
                     parameters["entry_z"]
                 ),
+                "exit_z": float(
+                    parameters["exit_z"]
+                ),
             }
 
         elif candidate.family == "momentum":
@@ -388,6 +391,9 @@ def generate_parameter_neighbors(
                 "num_std": float(
                     parameters["num_std"]
                 ),
+                "exit_num_std": float(
+                    parameters["exit_num_std"]
+                ),
             }
 
         elif candidate.family == "stat_arb":
@@ -398,12 +404,129 @@ def generate_parameter_neighbors(
                 "entry_z": float(
                     parameters["entry_z"]
                 ),
+                "exit_z": float(
+                    parameters["exit_z"]
+                ),
             }
 
         elif candidate.family == "carry":
             parameters = {
                 "threshold": float(
                     parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "trend_sma":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+            }
+
+        elif candidate.family == "trend_donchian":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+            }
+
+        elif candidate.family == "mean_reversion_rsi":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "entry_band": float(
+                    parameters["entry_band"]
+                ),
+            }
+
+        elif candidate.family == "mean_reversion_return_zscore":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
+                ),
+            }
+
+        elif candidate.family == "momentum_ewma":
+            parameters = {
+                "span": int(
+                    parameters["span"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "momentum_risk_adjusted":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "volatility_atr":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "num_atr": float(
+                    parameters["num_atr"]
+                ),
+            }
+
+        elif candidate.family == "volatility_range_expansion":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "expansion_multiple": float(
+                    parameters["expansion_multiple"]
+                ),
+            }
+
+        elif candidate.family == "stat_arb_rsi":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "entry_band": float(
+                    parameters["entry_band"]
+                ),
+            }
+
+        elif candidate.family == "stat_arb_return_zscore":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
+                ),
+            }
+
+        elif candidate.family == "carry_rate_momentum":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "carry_zscore":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
                 ),
             }
 

@@ -36,8 +36,8 @@ class TrendStrategy(BaseStrategy):
     family_name = "trend"
     parameter_names = ("fast_window", "slow_window")
     parameter_grid = {
-        "fast_window": [12, 24],
-        "slow_window": [72, 120, 240],
+        "fast_window": [12, 24, 48],
+        "slow_window": [72, 120, 240, 480],
     }
     enabled = True
 

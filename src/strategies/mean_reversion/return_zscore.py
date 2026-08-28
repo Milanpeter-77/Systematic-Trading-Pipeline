@@ -6,44 +6,46 @@ import pandas as pd
 from src.strategies.base import BaseStrategy
 
 
-class MeanReversionStrategy(BaseStrategy):
+class MeanReversionReturnZScoreStrategy(BaseStrategy):
     """
     Stateful short-horizon mean-reversion strategy based on a rolling
-    close-price z-score.
+    z-score of period-over-period returns, rather than the price level.
 
     Behavioral hypothesis
     ---------------------
-    Large short-term price deviations may partially reverse because of
-    temporary liquidity imbalances, forced trading, market overreaction,
-    and dealer inventory effects.
+    A single-period return that is unusually large relative to its own
+    recent distribution reflects a short-term overreaction -- forced
+    trading, order-flow imbalance, or a liquidity shock -- that tends to
+    partially reverse over the next few bars, in the spirit of the
+    short-term-reversal literature. This targets a shorter, sharper
+    horizon than the price-level z-score strategy, which reacts to a
+    sustained deviation building up over the whole lookback window.
 
     Free parameters
     ---------------
     lookback
-        Rolling window used to estimate the local price mean and volatility.
+        Rolling window used to estimate the local mean and volatility of
+        period returns.
     entry_z
         Absolute z-score required to enter a contrarian position.
-    exit_z
-        Absolute z-score at which an open position is closed. Set below
-        entry_z to exit before the mean is fully reached (a partial-
-        reversion exit); exit_z=0 reproduces exiting exactly at the mean.
 
     Fixed design choices
     --------------------
-    - Enter long when z <= -entry_z.
+    - Enter long when the return z-score z <= -entry_z.
     - Enter short when z >= entry_z.
-    - Exit a long position when z >= -exit_z.
-    - Exit a short position when z <= exit_z.
+    - Exit a long position when z >= 0.
+    - Exit a short position when z <= 0.
     - Hold the current position between entry and exit.
-    - No stop-loss or holding-period parameter.
+    - Identical state-machine mechanics to mean_reversion's zscore.py,
+      applied to close.pct_change() instead of the price level itself.
+    - No stop-loss, holding-period, or separate exit parameter.
     """
 
-    family_name = "mean_reversion"
-    parameter_names = ("lookback", "entry_z", "exit_z")
+    family_name = "mean_reversion_return_zscore"
+    parameter_names = ("lookback", "entry_z")
     parameter_grid = {
-        "lookback": [24, 48, 96, 168],
-        "entry_z": [1.5, 2.0, 2.5],
-        "exit_z": [0.0, 0.5],
+        "lookback": [12, 24, 48],
+        "entry_z": [1.5, 2.0],
     }
     enabled = True
 
@@ -52,7 +54,6 @@ class MeanReversionStrategy(BaseStrategy):
 
         lookback = self.parameters["lookback"]
         entry_z = self.parameters["entry_z"]
-        exit_z = self.parameters["exit_z"]
 
         if not isinstance(lookback, int):
             raise TypeError("lookback must be an integer.")
@@ -66,12 +67,6 @@ class MeanReversionStrategy(BaseStrategy):
         if entry_z <= 0:
             raise ValueError("entry_z must be positive.")
 
-        if not isinstance(exit_z, (int, float)):
-            raise TypeError("exit_z must be numeric.")
-
-        if not 0 <= exit_z < entry_z:
-            raise ValueError("exit_z must satisfy 0 <= exit_z < entry_z.")
-
     def generate_positions(
         self,
         data: pd.DataFrame,
@@ -80,16 +75,17 @@ class MeanReversionStrategy(BaseStrategy):
 
         lookback = self.parameters["lookback"]
         entry_z = float(self.parameters["entry_z"])
-        exit_z = float(self.parameters["exit_z"])
 
         result = data.copy()
 
-        result["rolling_mean"] = result["close"].rolling(
+        result["period_return"] = result["close"].pct_change()
+
+        result["rolling_mean"] = result["period_return"].rolling(
             window=lookback,
             min_periods=lookback,
         ).mean()
 
-        result["rolling_std"] = result["close"].rolling(
+        result["rolling_std"] = result["period_return"].rolling(
             window=lookback,
             min_periods=lookback,
         ).std(ddof=0)
@@ -99,7 +95,7 @@ class MeanReversionStrategy(BaseStrategy):
         )
 
         result["z_score"] = (
-            result["close"] - result["rolling_mean"]
+            result["period_return"] - result["rolling_mean"]
         ) / valid_std
 
         target_positions = np.zeros(
@@ -124,11 +120,11 @@ class MeanReversionStrategy(BaseStrategy):
                     current_position = -1
 
             elif current_position == 1:
-                if z_score >= -exit_z:
+                if z_score >= 0:
                     current_position = 0
 
             elif current_position == -1:
-                if z_score <= exit_z:
+                if z_score <= 0:
                     current_position = 0
 
             target_positions[index] = current_position

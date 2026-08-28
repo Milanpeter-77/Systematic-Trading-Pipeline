@@ -14,7 +14,7 @@ Three independent pipelines, each with its own entry point under `scripts/`:
 
 ## Strategy families and instruments
 
-Six strategy families currently exist under `src/strategies/`: **trend following**, **mean reversion**, **momentum**, **statistical arbitrage**, **volatility**, and **carry**. Each subclasses `BaseStrategy` (`src/strategies/base.py`) and declares its own parameter grid.
+Six strategy families currently exist under `src/strategies/`: **trend following**, **mean reversion**, **momentum**, **statistical arbitrage**, **volatility**, and **carry**. Each family holds three economically distinct strategies (18 total), one Python module per strategy. Each subclasses `BaseStrategy` (`src/strategies/base.py`), is registered under its own unique key in `STRATEGY_REGISTRY` (`src/factory/registry.py`), and declares its own parameter grid.
 
 Eight instruments are currently active in `config/instruments.yml`:
 
@@ -85,6 +85,13 @@ pip install -e .
 
 If `ibapi==10.45.1` is already installed and satisfied, `pip install -e .` won't try to fetch it from PyPI at all.
 
+To run the unit test suite (`tests/unit/`), install the dev extra and run pytest:
+
+```bash
+pip install -e ".[dev]"
+pytest tests/unit/
+```
+
 Create a `.env` in the repo root (no template ships — these are the names `src/environment.py` reads):
 
 ```
@@ -131,7 +138,7 @@ Three `launchd` LaunchAgents (`~/Library/LaunchAgents/com.milanpeter.tradingpipe
 - **More asset classes.** Extend `config/instruments.yml` and the IBKR contract builders to cover futures, options, bonds, and CFDs, alongside the currently FX/commodity/equity-only coverage.
 - **Re-enable the currently-disabled instruments** (SPXUSD, DAX, AAPL, ETHUSD, BTCUSD) once the underlying IBKR market-data subscriptions are sorted out on the account.
 - **Carry-specific data.** Carry strategies currently run on price data alone; forward/swap-implied carry data is planned so they have a proper economic signal to trade on, rather than a price-only proxy.
-- **Unit test coverage.** `tests/integration/` (requires live IBKR) exists; `tests/unit/` is currently empty and is a real gap, particularly around the validation-gate math.
+- **Unit test coverage.** `tests/integration/` (requires live IBKR) exists; `tests/unit/` now covers every strategy's parameter validation and `generate_positions()` output shape, the registry/generator, and Layer 1's per-family parameter-neighbor wiring. The Layer 2-4 statistical-validation math itself (walk-forward re-optimization, stress scenarios, permutation/bootstrap/Deflated-Sharpe) is still uncovered and remains the real gap.
 - **Execution pipeline.** `scripts/run_execution.py` is scaffolding today; building this out is the natural next step once enough candidates have survived the gate.
 - **Deployment hardening,** roughly in order of likely payoff: enabling Automatic Login on the Mac mini so the LaunchAgents survive a reboot unattended; a dependency lockfile (`pip freeze > requirements-lock.txt`) so venv rebuilds are reproducible; IBC (IBController) for automated TWS login, removing the last manual step in the ingestion chain; and, if 5-minute pull latency ever becomes a real problem, a GitHub Actions self-hosted runner on the Mac mini for push-triggered (rather than polled) deploys.
 
