@@ -1,0 +1,31 @@
+2026-08-27 22:17:31 | INFO     | src.pipelines.alpha_factory.pipeline | Logging to /Users/milanpeter/Developer/Systematic-Trading-Pipeline/logs/alpha_factory/20260827_221731.log
+2026-08-27 22:17:31 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-08-27 22:17:31 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY PIPELINE
+2026-08-27 22:17:31 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-08-27 22:17:31 | INFO     | src.pipelines.alpha_factory.pipeline | [1/6] Screening for cointegrated pairs...
+2026-08-27 22:20:08 | INFO     | src.pipelines.alpha_factory.pipeline | Found 2 cointegrated pair(s): ['AUDUSD_VOD', 'XAGUSD_XAUUSD']
+2026-08-27 22:20:08 | INFO     | src.pipelines.alpha_factory.pipeline | [2/6] Generating strategy candidates...
+2026-08-27 22:20:08 | INFO     | src.pipelines.alpha_factory.pipeline | Generated 232 official candidates.
+2026-08-27 22:20:08 | INFO     | src.pipelines.alpha_factory.pipeline | 16 of 232 candidates due for testing this run (216 still within their 30-day cooldown).
+2026-08-27 22:20:08 | INFO     | src.pipelines.alpha_factory.pipeline | Parallel execution enabled: 2 worker processes.
+2026-08-27 22:20:08 | INFO     | src.pipelines.alpha_factory.pipeline | [3/6] Running candidate backtests...
+2026-08-27 22:20:28 | INFO     | src.pipelines.alpha_factory.pipeline | Completed 16 candidate backtests.
+2026-08-27 22:20:28 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1: OOS and parameter sensitivity...
+2026-08-27 22:21:47 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 1 passes across full tested history: 31
+2026-08-27 22:21:47 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 2: walk-forward validation...
+2026-08-27 22:27:45 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 2 passes across full tested history: 29
+2026-08-27 22:27:45 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 3: historical and synthetic stress...
+2026-08-27 22:27:45 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 3 passes across full tested history: 88
+2026-08-27 22:27:45 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 4: statistical validation...
+2026-08-27 22:28:06 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 4 passes across full tested history: 0
+2026-08-27 22:28:06 | INFO     | src.pipelines.alpha_factory.pipeline | [5/6] Building final funnel...
+2026-08-27 22:28:06 | INFO     | src.pipelines.alpha_factory.pipeline | Recorded 16 test event(s) for run 20260827_221731.
+2026-08-27 22:28:06 | INFO     | src.pipelines.alpha_factory.pipeline | [6/6] Building reporting outputs...
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY COMPLETED
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Official candidates: 232
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Final survivors: 0
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Results directory: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Report summary: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results/report/report_summary.json
+2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Pass complete. Sleeping 24.0h until next check.
