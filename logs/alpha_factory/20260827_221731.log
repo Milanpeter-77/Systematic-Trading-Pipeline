@@ -29,3 +29,5 @@
 2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Results directory: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results
 2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Report summary: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results/report/report_summary.json
 2026-08-27 22:28:08 | INFO     | src.pipelines.alpha_factory.pipeline | Pass complete. Sleeping 24.0h until next check.
+2026-08-28 09:05:56 | INFO     | src.pipelines.alpha_factory.pipeline | Received signal 15; will stop after the current pass.
+2026-08-28 09:05:57 | INFO     | src.pipelines.alpha_factory.pipeline | Shutdown requested, exiting.
