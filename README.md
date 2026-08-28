@@ -48,7 +48,7 @@ A cooldown (`config/validation.yml`, 30 days per candidate) prevents re-testing 
 ├── config/                    # instruments.yml, strategies.yml, validation.yml
 ├── dashboard/                 # Quarto site (index/performance/strategies/validation/data), published to GitHub Pages
 ├── data/                      # local-only, gitignored -- raw/processed market data
-├── logs/                      # local-only, gitignored -- per-run pipeline logs
+├── logs/                      # per-run pipeline logs -- committed on the Mac mini's hourly publish, pruned locally after 14 days
 ├── results/                   # candidates/backtests/validation/data_quality/report/state -- mostly committed to git
 ├── scripts/                   # the three entry points described above
 ├── src/
@@ -117,14 +117,14 @@ The pipelines run continuously on a dedicated always-on Mac mini, separate from 
 Three `launchd` LaunchAgents (`~/Library/LaunchAgents/com.milanpeter.tradingpipeline.*.plist`) drive everything:
 
 - **`pulldeploy`** (every 5 min) — `git fetch` + fast-forward-only pull if `origin/main` has moved. Never merges, rebases, or force-anything; if history has diverged it logs an error and leaves the working tree alone rather than guessing. If a pull actually changes code, it restarts the alpha-factory agent (`launchctl kickstart`), since a long-running process won't notice new code on disk on its own.
-- **`ingestionpublish`** (hourly, `:00`) — fast-forward safety net, one ingestion pass, log rotation/pruning, then `git add results/` + commit + push if anything changed. This is what keeps the GitHub Actions dashboard build fed with fresh data — nothing else pushes `results/` to GitHub.
+- **`ingestionpublish`** (hourly, `:00`) — fast-forward safety net, one ingestion pass, log rotation/pruning, then `git add results/ logs/` + commit + push if anything changed. This is what keeps the GitHub Actions dashboard build fed with fresh data — nothing else pushes `results/` to GitHub.
 - **`alphafactory`** (persistent, `RunAtLoad` + `KeepAlive`) — the daemon started once and left running; `launchd` restarts it automatically if it crashes. Stopping it intentionally requires `launchctl bootout` (not just killing the process), since `KeepAlive` would otherwise relaunch it.
 
 `bin/pull_and_deploy.sh` and `bin/run_ingestion_and_publish.sh` implement the two scheduled jobs (the `.plist` files themselves stay local to the Mac mini, since their absolute paths are machine-specific). Both share a `/tmp`-based lock so they never run `git` concurrently against the same working tree.
 
 **What a push from the dev machine triggers:** within ~5 minutes, `pulldeploy` fast-forwards the Mac mini's clone. Ingestion picks up the change automatically on its next hourly run (it's a fresh process each time). Alpha-factory gets an explicit restart from the poller, since it's one long-running process. The one gap: a new/changed dependency in `pyproject.toml` is *not* automatically reinstalled into the Mac mini's venv — that still needs a manual `pip install -e .` there if a pushed change adds an import.
 
-**Monitoring:** each job's `launchd`-level output goes to `~/Library/Logs/SystematicTradingPipeline/{pulldeploy,ingestion_publish,alphafactory}.log`; each pipeline's own detailed, timestamped log goes to `logs/{data_ingestion,alpha_factory}/` inside the repo. `tail -f` either from a Terminal on the Mac (locally or via Screen Sharing).
+**Monitoring:** each job's `launchd`-level output goes to `~/Library/Logs/SystematicTradingPipeline/{pulldeploy,ingestion_publish,alphafactory}.log` — these stay local to the Mac mini, machine-specific ops output, never committed. Each pipeline's own detailed, timestamped log goes to `logs/{data_ingestion,alpha_factory}/` inside the repo — these *are* committed and pushed on the hourly publish, so they're reviewable from GitHub or the dev machine without needing Screen Sharing; locally they're still pruned after 14 days to keep the working directory bounded, but full history remains in git. `tail -f` either kind from a Terminal on the Mac (locally or via Screen Sharing) to watch live.
 
 ## Roadmap
 

@@ -7,8 +7,9 @@
 #      block step 4 -- alpha-factory's independent output should still be
 #      published even if this hour's ingestion attempt failed.
 #   3. Rotates/prunes local log files.
-#   4. Commits and pushes any changes under results/ so the existing hourly
-#      GitHub Actions dashboard workflow has fresh input.
+#   4. Commits and pushes any changes under results/ and logs/ so the
+#      existing hourly GitHub Actions dashboard workflow has fresh input,
+#      and pipeline logs are reviewable without Screen Sharing into this Mac.
 #
 # Scheduled by: com.milanpeter.tradingpipeline.ingestionpublish.plist
 
@@ -96,9 +97,9 @@ find "$LOG_DIR" -name '*.log.old' -mtime +14 -delete 2>/dev/null
 find "$REPO_DIR/logs/data_ingestion" -name '*.log' -mtime +14 -delete 2>/dev/null
 find "$REPO_DIR/logs/alpha_factory" -name '*.log' -mtime +14 -delete 2>/dev/null
 
-# --- 4. publish results/ if anything changed ---
+# --- 4. publish results/ and logs/ if anything changed ---
 if [ "$git_ok" = true ]; then
-    git add results/
+    git add results/ logs/
     if git diff --cached --quiet; then
         log "No changes under results/ to publish."
     else
