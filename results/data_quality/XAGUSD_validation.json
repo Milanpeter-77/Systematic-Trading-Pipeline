@@ -4,19 +4,19 @@
   "expected_session": "24/5",
   "tick_size": 0.001,
   "symbol": "XAGUSD",
-  "row_count": 39358,
+  "row_count": 39359,
   "start_timestamp": "2020-01-02T00:00:00+00:00",
-  "end_timestamp": "2026-08-28T17:00:00+00:00",
+  "end_timestamp": "2026-08-28T18:00:00+00:00",
   "invalid_timestamp_count": 0,
   "duplicate_timestamp_rows": 0,
   "missing_required_value_count": 0,
   "nonpositive_price_count": 0,
   "invalid_ohlc_count": 0,
   "extreme_return_count": 301,
-  "extreme_range_count": 1113,
+  "extreme_range_count": 1114,
   "unexpected_gap_count": 1394,
   "largest_time_gap_minutes": 4620.0,
   "removed_invalid_rows": 0,
   "duplicate_rows_identified": 0,
-  "rows_after_cleaning": 39358
+  "rows_after_cleaning": 39359
 }
