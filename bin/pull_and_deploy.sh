@@ -2,9 +2,15 @@
 #
 # Polls origin/main every 5 minutes (via launchd StartInterval) and fast-
 # forwards the local checkout if -- and only if -- a clean fast-forward is
-# possible. Never merges, rebases, or force-anything. If a pull actually
-# changes code, restarts the alpha-factory LaunchAgent, since a running
-# Python process does not notice files changing on disk on its own.
+# possible. Never merges, rebases, or force-anything. Restarts the
+# alpha-factory LaunchAgent only if the pull actually touched
+# pipeline-relevant code (src/, config/, scripts/, pyproject.toml) --
+# NOT on every pull, since run_ingestion_and_publish.sh pushes an
+# "Automated results sync" commit most hours that only touches results/
+# and logs/, and a running Python process does not notice files changing
+# on disk on its own, so restarting on those too would kill an
+# in-progress alpha-factory pass for no code-relevant reason (a real
+# problem once one pass takes longer than the ~hourly sync cadence).
 #
 # Scheduled by: com.milanpeter.tradingpipeline.pulldeploy.plist (StartInterval=300)
 
@@ -13,6 +19,7 @@ set -uo pipefail
 REPO_DIR="/Users/milanpeter/Developer/Systematic-Trading-Pipeline"
 LOCK_DIR="/tmp/com.milanpeter.tradingpipeline.gitops.lock"
 ALPHA_FACTORY_LABEL="com.milanpeter.tradingpipeline.alphafactory"
+CODE_PATH_PATTERN='^(src/|config/|scripts/|pyproject\.toml$)'
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
@@ -60,11 +67,16 @@ fi
 if git merge-base --is-ancestor main origin/main; then
     if git pull --ff-only origin main --quiet; then
         new_sha=$(git rev-parse main)
-        log "Fast-forwarded ${local_sha:0:8} -> ${new_sha:0:8}. Restarting alpha-factory."
-        if launchctl kickstart -k "gui/$(id -u)/${ALPHA_FACTORY_LABEL}"; then
-            log "alpha-factory restarted."
+        log "Fast-forwarded ${local_sha:0:8} -> ${new_sha:0:8}."
+        if git diff --name-only "$local_sha" "$new_sha" | grep -qE "$CODE_PATH_PATTERN"; then
+            log "Pipeline code changed. Restarting alpha-factory."
+            if launchctl kickstart -k "gui/$(id -u)/${ALPHA_FACTORY_LABEL}"; then
+                log "alpha-factory restarted."
+            else
+                log "ERROR: 'launchctl kickstart' failed for ${ALPHA_FACTORY_LABEL} -- restart it manually."
+            fi
         else
-            log "ERROR: 'launchctl kickstart' failed for ${ALPHA_FACTORY_LABEL} -- restart it manually."
+            log "No pipeline-relevant paths changed (results/logs sync only) -- leaving alpha-factory running."
         fi
     else
         log "ERROR: 'git pull --ff-only' failed unexpectedly after the ancestor check passed. Investigate manually."
