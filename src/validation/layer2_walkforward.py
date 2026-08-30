@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from functools import partial
 from typing import Any
@@ -18,6 +19,9 @@ from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
 from src.factory.parallel import get_worker_market_data, run_parallel_map
 from src.validation.layer1_oos import calculate_window_metrics, generate_parameter_neighbors
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -584,6 +588,53 @@ def evaluate_layer2_criteria(
 
 
 def evaluate_layer2_candidate(
+    result: BacktestResult,
+    market_data: pd.DataFrame,
+    layer2_config: dict[str, Any],
+    commission_bps_per_side: float = 0.5,
+) -> tuple[dict[str, Any], pd.DataFrame]:
+    """
+    Evaluate one official candidate under Layer 2.
+
+    Never raises: see _evaluate_layer2_candidate_or_raise for the actual
+    evaluation logic and layer4_statistics.evaluate_layer4_candidate for
+    why a per-candidate failure must not propagate. Layer 2's own
+    walk-forward window/fold logic (and the parameter-neighbor
+    re-backtesting it does per fold) is a wide exception surface for
+    sparse-data or few/zero-trade candidates.
+    """
+    try:
+        return _evaluate_layer2_candidate_or_raise(
+            result=result,
+            market_data=market_data,
+            layer2_config=layer2_config,
+            commission_bps_per_side=commission_bps_per_side,
+        )
+    except Exception as error:
+        logger.warning(
+            f"Layer 2 evaluation raised for "
+            f"{result.candidate.candidate_id}: "
+            f"{type(error).__name__}: {error}"
+        )
+
+        record = {
+            **result.candidate.to_dict(),
+            "layer2_pass": False,
+            "layer2_failed_criteria": (
+                f"exception: {type(error).__name__}"
+            ),
+            "layer2_primary_failure_reason": (
+                f"exception: {type(error).__name__}: {error}"
+            ),
+            "failure_reason": (
+                f"exception: {type(error).__name__}: {error}"
+            ),
+        }
+
+        return record, pd.DataFrame()
+
+
+def _evaluate_layer2_candidate_or_raise(
     result: BacktestResult,
     market_data: pd.DataFrame,
     layer2_config: dict[str, Any],

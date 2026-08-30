@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from functools import partial
 from itertools import product
@@ -18,6 +19,9 @@ from src.backtest.metrics import (
 )
 from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
+
+
+logger = logging.getLogger(__name__)
 from src.factory.parallel import get_worker_market_data, run_parallel_map
 
 
@@ -770,6 +774,49 @@ def evaluate_neighbor_population(
 
 
 def evaluate_layer1_candidate(
+    result: BacktestResult,
+    market_data: pd.DataFrame,
+    split: SampleSplit,
+    layer1_criteria: dict[str, Any],
+    commission_bps_per_side: float = 0.5,
+) -> tuple[
+    dict[str, Any],
+    pd.DataFrame,
+]:
+    """
+    Evaluate one official candidate under Layer 1.
+
+    Never raises: see _evaluate_layer1_candidate_or_raise for the actual
+    evaluation logic and layer4_statistics.evaluate_layer4_candidate for
+    why a per-candidate failure must not propagate.
+    """
+    try:
+        return _evaluate_layer1_candidate_or_raise(
+            result=result,
+            market_data=market_data,
+            split=split,
+            layer1_criteria=layer1_criteria,
+            commission_bps_per_side=commission_bps_per_side,
+        )
+    except Exception as error:
+        logger.warning(
+            f"Layer 1 evaluation raised for "
+            f"{result.candidate.candidate_id}: "
+            f"{type(error).__name__}: {error}"
+        )
+
+        record = {
+            **result.candidate.to_dict(),
+            "layer1_pass": False,
+            "failure_reason": (
+                f"exception: {type(error).__name__}: {error}"
+            ),
+        }
+
+        return record, pd.DataFrame()
+
+
+def _evaluate_layer1_candidate_or_raise(
     result: BacktestResult,
     market_data: pd.DataFrame,
     split: SampleSplit,

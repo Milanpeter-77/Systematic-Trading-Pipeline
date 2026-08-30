@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from functools import partial
 from typing import Any
 
@@ -11,6 +12,9 @@ from scipy.stats import kurtosis, norm, skew
 from src.backtest.metrics import infer_periods_per_year
 from src.backtest.result import BacktestResult
 from src.factory.parallel import run_parallel_map
+
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_sharpe(
@@ -838,6 +842,53 @@ def stable_candidate_seed(candidate_id: str, base_seed: int) -> int:
 
 
 def evaluate_layer4_candidate(
+    result: BacktestResult,
+    layer4_config: dict[str, Any],
+    candidate_seed: int,
+    official_trial_count: int,
+) -> tuple[
+    dict[str, Any],
+    pd.DataFrame,
+    pd.DataFrame,
+]:
+    """
+    Evaluate one official candidate under Layer 4.
+
+    Never raises: a candidate whose evaluation itself raises (e.g. a
+    genuinely zero-trade candidate with nothing to bootstrap) is recorded
+    as layer4_pass=False with the exception in failure_reason, rather than
+    propagating and taking down every other candidate's already-completed
+    work in the same run -- a run of hundreds/thousands of independent
+    candidates should not have single-point-of-failure semantics for one
+    candidate's edge case. See _evaluate_layer4_candidate_or_raise for the
+    actual evaluation logic.
+    """
+    try:
+        return _evaluate_layer4_candidate_or_raise(
+            result=result,
+            layer4_config=layer4_config,
+            candidate_seed=candidate_seed,
+            official_trial_count=official_trial_count,
+        )
+    except Exception as error:
+        logger.warning(
+            f"Layer 4 evaluation raised for "
+            f"{result.candidate.candidate_id}: "
+            f"{type(error).__name__}: {error}"
+        )
+
+        record = {
+            **result.candidate.to_dict(),
+            "layer4_pass": False,
+            "failure_reason": (
+                f"exception: {type(error).__name__}: {error}"
+            ),
+        }
+
+        return record, pd.DataFrame(), pd.DataFrame()
+
+
+def _evaluate_layer4_candidate_or_raise(
     result: BacktestResult,
     layer4_config: dict[str, Any],
     candidate_seed: int,

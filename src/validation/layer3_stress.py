@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from functools import partial
 from typing import Any
@@ -14,6 +15,9 @@ from src.backtest.metrics import (
 )
 from src.backtest.result import BacktestResult
 from src.factory.parallel import get_worker_market_data, run_parallel_map
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -679,6 +683,46 @@ def evaluate_layer3_criteria(
 
 
 def evaluate_layer3_candidate(
+    result: BacktestResult,
+    market_data: pd.DataFrame,
+    layer3_config: dict[str, Any],
+) -> tuple[
+    dict[str, Any],
+    pd.DataFrame,
+    pd.DataFrame,
+]:
+    """
+    Evaluate one candidate under Layer 3.
+
+    Never raises: see _evaluate_layer3_candidate_or_raise for the actual
+    evaluation logic and layer4_statistics.evaluate_layer4_candidate for
+    why a per-candidate failure must not propagate.
+    """
+    try:
+        return _evaluate_layer3_candidate_or_raise(
+            result=result,
+            market_data=market_data,
+            layer3_config=layer3_config,
+        )
+    except Exception as error:
+        logger.warning(
+            f"Layer 3 evaluation raised for "
+            f"{result.candidate.candidate_id}: "
+            f"{type(error).__name__}: {error}"
+        )
+
+        record = {
+            **result.candidate.to_dict(),
+            "layer3_pass": False,
+            "failure_reason": (
+                f"exception: {type(error).__name__}: {error}"
+            ),
+        }
+
+        return record, pd.DataFrame(), pd.DataFrame()
+
+
+def _evaluate_layer3_candidate_or_raise(
     result: BacktestResult,
     market_data: pd.DataFrame,
     layer3_config: dict[str, Any],

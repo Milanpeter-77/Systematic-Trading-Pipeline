@@ -14,6 +14,19 @@ from src.factory.candidate import CandidateSpec
 from src.factory.registry import create_strategy
 
 
+TRADE_COLUMNS = [
+    "entry_timestamp",
+    "exit_timestamp",
+    "direction",
+    "entry_price",
+    "exit_price",
+    "holding_hours",
+    "gross_trade_return",
+    "net_trade_return",
+    "trade_cost",
+]
+
+
 def extract_trades(
     backtest_data: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -83,6 +96,16 @@ def extract_trades(
                 ),
             }
         )
+
+    if not records:
+        # pd.DataFrame([]) has zero columns, not the expected columns with
+        # zero rows -- a genuinely flat-forever candidate (e.g. a threshold
+        # never crossed over the whole history) would otherwise return a
+        # trades table missing net_trade_return entirely, which crashes
+        # anything downstream expecting that column (see Layer 4's
+        # run_trade_sequence_bootstrap) instead of failing that candidate
+        # cleanly for having no trades to evaluate.
+        return pd.DataFrame(columns=TRADE_COLUMNS)
 
     return pd.DataFrame(records)
 
