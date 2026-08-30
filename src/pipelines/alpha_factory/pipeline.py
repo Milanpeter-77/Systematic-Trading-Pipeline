@@ -112,6 +112,32 @@ def _run_diagnostics_directory() -> Path:
     return directory
 
 
+def _split_into_batches(
+    candidate_frame: pd.DataFrame,
+    batch_size: int,
+) -> list[pd.DataFrame]:
+    """
+    Split candidate_frame into ordered, batch_size-row chunks (the last
+    chunk may be smaller).
+
+    batch_size <= 0 or batch_size >= len(candidate_frame) both degrade to
+    a single batch containing the whole frame -- this must stay a strict
+    generalization of the pre-batching code path, since run_alpha_factory
+    relies on "one big batch" reproducing the original unbatched behavior
+    exactly when candidate_batching is disabled or batch_size is large.
+    """
+    if candidate_frame.empty:
+        return []
+
+    if batch_size <= 0 or batch_size >= len(candidate_frame):
+        return [candidate_frame]
+
+    return [
+        candidate_frame.iloc[start : start + batch_size]
+        for start in range(0, len(candidate_frame), batch_size)
+    ]
+
+
 def prepare_pair_features(
     save_output: bool = True,
 ) -> list[str]:
@@ -453,6 +479,7 @@ def run_layer1_validation(
     ],
     save_output: bool = True,
     executor: Any = None,
+    batch_label: str | None = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -466,6 +493,11 @@ def run_layer1_validation(
     True, so a candidate skipped this run still shows its last known
     pass/fail rather than disappearing. neighbor_results (a per-run
     robustness diagnostic) covers only the candidates evaluated this run.
+
+    batch_label, if given, is appended to the diagnostics filename so
+    multiple calls within one run (one per candidate batch, see
+    run_alpha_factory) don't overwrite each other's diagnostics under the
+    same per-run directory.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -499,9 +531,15 @@ def run_layer1_validation(
             layer1_results,
         )
 
+        neighbor_results_filename = (
+            "layer1_neighbor_results.csv"
+            if batch_label is None
+            else f"layer1_neighbor_results.batch_{batch_label}.csv"
+        )
+
         neighbor_results.to_csv(
             _run_diagnostics_directory()
-            / "layer1_neighbor_results.csv",
+            / neighbor_results_filename,
             index=False,
         )
 
@@ -532,6 +570,7 @@ def run_layer2_validation(
     ],
     save_output: bool = True,
     executor: Any = None,
+    batch_label: str | None = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -544,6 +583,8 @@ def run_layer2_validation(
     results/validation/layer2_results.csv history when save_output is
     True (see run_layer1_validation for why). window_results is a per-run
     diagnostic covering only the candidates evaluated this run.
+
+    batch_label -- see run_layer1_validation.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -574,9 +615,15 @@ def run_layer2_validation(
             layer2_results,
         )
 
+        window_results_filename = (
+            "layer2_window_results.csv"
+            if batch_label is None
+            else f"layer2_window_results.batch_{batch_label}.csv"
+        )
+
         window_results.to_csv(
             _run_diagnostics_directory()
-            / "layer2_window_results.csv",
+            / window_results_filename,
             index=False,
         )
 
@@ -607,6 +654,7 @@ def run_layer3_validation(
     ],
     save_output: bool = True,
     executor: Any = None,
+    batch_label: str | None = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -621,6 +669,8 @@ def run_layer3_validation(
     True (see run_layer1_validation for why). The historical/synthetic
     stress diagnostics are per-run and cover only the candidates evaluated
     this run.
+
+    batch_label -- see run_layer1_validation.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -653,15 +703,27 @@ def run_layer3_validation(
 
         diagnostics_directory = _run_diagnostics_directory()
 
+        historical_stress_filename = (
+            "layer3_historical_stress_results.csv"
+            if batch_label is None
+            else f"layer3_historical_stress_results.batch_{batch_label}.csv"
+        )
+
         historical_stress_results.to_csv(
             diagnostics_directory
-            / "layer3_historical_stress_results.csv",
+            / historical_stress_filename,
             index=False,
+        )
+
+        synthetic_stress_filename = (
+            "layer3_synthetic_stress_results.csv"
+            if batch_label is None
+            else f"layer3_synthetic_stress_results.batch_{batch_label}.csv"
         )
 
         synthetic_stress_results.to_csv(
             diagnostics_directory
-            / "layer3_synthetic_stress_results.csv",
+            / synthetic_stress_filename,
             index=False,
         )
 
@@ -690,6 +752,7 @@ def run_layer4_validation(
     official_trial_count: int,
     save_output: bool = True,
     executor: Any = None,
+    batch_label: str | None = None,
 ) -> tuple[
     pd.DataFrame,
     pd.DataFrame,
@@ -712,6 +775,8 @@ def run_layer4_validation(
     diagnostics are per-run and cover only the candidates evaluated this
     run -- a fresh permutation draw is only meaningful for a candidate
     actually tested this run, so these are not merged with history.
+
+    batch_label -- see run_layer1_validation.
     """
     gate_config = load_gate_config(
         VALIDATION_CONFIG_PATH
@@ -744,15 +809,27 @@ def run_layer4_validation(
 
         diagnostics_directory = _run_diagnostics_directory()
 
+        permutation_results_filename = (
+            "layer4_permutation_results.parquet"
+            if batch_label is None
+            else f"layer4_permutation_results.batch_{batch_label}.parquet"
+        )
+
         permutation_results.to_parquet(
             diagnostics_directory
-            / "layer4_permutation_results.parquet",
+            / permutation_results_filename,
             index=False,
+        )
+
+        bootstrap_results_filename = (
+            "layer4_bootstrap_results.parquet"
+            if batch_label is None
+            else f"layer4_bootstrap_results.batch_{batch_label}.parquet"
         )
 
         bootstrap_results.to_parquet(
             diagnostics_directory
-            / "layer4_bootstrap_results.parquet",
+            / bootstrap_results_filename,
             index=False,
         )
 
@@ -1176,168 +1253,252 @@ def run_alpha_factory() -> None:
             f"Parallel execution enabled: {max_workers} worker processes."
         )
 
+    # ------------------------------------------------------------------
+    # Candidates are backtested and run through Layer 1-4 in bounded-size
+    # batches, not all at once: holding every due candidate's full
+    # BacktestResult (a complete multi-year hourly timeseries + trades
+    # DataFrame each) in memory simultaneously for the whole run is what
+    # OOM-killed this process once the candidate population grew large.
+    # Each batch is independent -- no layer filters on an earlier layer's
+    # pass/fail for a candidate -- so a batch can go through backtest ->
+    # Layer1 -> Layer2 -> Layer3 -> Layer4 and be released before the next
+    # batch starts, bounding peak memory regardless of total population
+    # size. See config/validation.yml's candidate_batching block.
+    # ------------------------------------------------------------------
+    batching_config = config.get(
+        "candidate_batching",
+        {"enabled": False, "batch_size": 0},
+    )
+
+    batch_size = (
+        int(batching_config.get("batch_size", 0))
+        if batching_config.get("enabled", False)
+        else 0
+    )
+
+    batches = _split_into_batches(due_population, batch_size)
+    batch_count = len(batches)
+
+    candidate_metrics = None
+    layer1_results = layer2_results = layer3_results = layer4_results = None
+    completed_batches = 0
+
     try:
-        logger.info("[3/6] Running candidate backtests...")
-
-        (
-            candidate_metrics,
-            backtest_results,
-        ) = run_all_candidate_backtests(
-            processed_data=processed_data,
-            candidate_frame=due_population,
-            pair_symbols=pair_symbols,
-            save_output=True,
-            executor=executor,
-        )
-
-        logger.info(
-            f"Completed "
-            f"{len(backtest_results)} "
-            f"candidate backtests."
-        )
-
-        # ==================================================================
-        # STAGE 4/6 -- LAYER 1-4 VALIDATION
-        # ==================================================================
-        logger.info(
-            "[4/6] Running Layer 1: "
-            "OOS and parameter sensitivity..."
-        )
-
-        (
-            layer1_results,
-            layer1_neighbor_results,
-        ) = run_layer1_validation(
-            backtest_results=backtest_results,
-            processed_data=processed_data,
-            save_output=True,
-            executor=executor,
-        )
-
-        logger.info(
-            "Layer 1 passes across full tested history: "
-            f"{int(layer1_results['layer1_pass'].sum())}"
-        )
-
-        logger.info(
-            "Running Layer 2: "
-            "walk-forward validation..."
-        )
-
-        (
-            layer2_results,
-            layer2_window_results,
-        ) = run_layer2_validation(
-            backtest_results=backtest_results,
-            processed_data=processed_data,
-            save_output=True,
-            executor=executor,
-        )
-
-        logger.info(
-            "Layer 2 passes across full tested history: "
-            f"{int(layer2_results['layer2_pass'].sum())}"
-        )
-
-        logger.info(
-            "Running Layer 3: "
-            "historical and synthetic stress..."
-        )
-
-        (
-            layer3_results,
-            layer3_historical_results,
-            layer3_synthetic_results,
-        ) = run_layer3_validation(
-            backtest_results=backtest_results,
-            processed_data=processed_data,
-            save_output=True,
-            executor=executor,
-        )
-
-        logger.info(
-            "Layer 3 passes across full tested history: "
-            f"{int(layer3_results['layer3_pass'].sum())}"
-        )
-
-        logger.info(
-            "Running Layer 4: "
-            "statistical validation..."
-        )
-
-        (
-            layer4_results,
-            layer4_permutation_results,
-            layer4_bootstrap_results,
-        ) = run_layer4_validation(
-            backtest_results=backtest_results,
-            official_trial_count=official_trial_count,
-            save_output=True,
-            executor=executor,
-        )
-
-        logger.info(
-            "Layer 4 passes across full tested history: "
-            f"{int(layer4_results['layer4_pass'].sum())}"
-        )
-
-        # ==================================================================
-        # STAGE 5/6 -- FINAL FUNNEL
-        # ==================================================================
-        logger.info("[5/6] Building final funnel...")
-
-        (
-            final_funnel,
-            final_survivors,
-        ) = build_final_funnel(
-            layer1_results=layer1_results,
-            layer2_results=layer2_results,
-            layer3_results=layer3_results,
-            layer4_results=layer4_results,
-            candidate_metrics=candidate_metrics,
-            save_output=True,
-        )
-
-        # ------------------------------------------------------------------
-        # Record this run's test events now that Layer 1-4 pass/fail and
-        # final_pass are all known together for every candidate tested this
-        # run. If anything above raised, execution never reaches this
-        # point, so no events get recorded and every due candidate simply
-        # stays due and is retried next run.
-        # ------------------------------------------------------------------
-        if conn is not None:
-            tested_at = pd.Timestamp.now(tz="UTC").isoformat()
-            due_candidate_ids = set(due_population["candidate_id"])
-
-            events = [
-                test_history.TestEvent(
-                    candidate_id=row.candidate_id,
-                    run_id=run_id,
-                    family=row.family,
-                    symbol=row.symbol,
-                    tested_at=tested_at,
-                    layer1_pass=bool(row.layer1_pass),
-                    layer2_pass=bool(row.layer2_pass),
-                    layer3_pass=bool(row.layer3_pass),
-                    layer4_pass=bool(row.layer4_pass),
-                    final_pass=bool(row.final_pass),
+        for batch_index, candidate_batch in enumerate(batches):
+            if _shutdown_requested:
+                logger.info(
+                    f"Shutdown requested; stopping after "
+                    f"{completed_batches}/{batch_count} batch(es) "
+                    f"completed this pass."
                 )
-                for row in final_funnel.loc[
-                    final_funnel["candidate_id"].isin(due_candidate_ids)
-                ].itertuples()
-            ]
+                break
 
-            test_history.record_test_events(conn, events)
+            batch_label = f"{batch_index + 1:02d}"
+            batch_progress = f"batch {batch_index + 1}/{batch_count}"
 
             logger.info(
-                f"Recorded {len(events)} test event(s) for run {run_id}."
+                f"[3/6] Running candidate backtests "
+                f"({batch_progress}, {len(candidate_batch)} candidates)..."
             )
+
+            (
+                candidate_metrics,
+                backtest_results,
+            ) = run_all_candidate_backtests(
+                processed_data=processed_data,
+                candidate_frame=candidate_batch,
+                pair_symbols=pair_symbols,
+                save_output=True,
+                executor=executor,
+            )
+
+            logger.info(
+                f"Completed {len(backtest_results)} candidate backtests "
+                f"({batch_progress})."
+            )
+
+            # ==============================================================
+            # STAGE 4/6 -- LAYER 1-4 VALIDATION (this batch)
+            # ==============================================================
+            logger.info(
+                f"[4/6] Running Layer 1 ({batch_progress}): "
+                "OOS and parameter sensitivity..."
+            )
+
+            (
+                layer1_results,
+                layer1_neighbor_results,
+            ) = run_layer1_validation(
+                backtest_results=backtest_results,
+                processed_data=processed_data,
+                save_output=True,
+                executor=executor,
+                batch_label=batch_label,
+            )
+
+            logger.info(
+                f"Layer 1 passes across full tested history "
+                f"({batch_progress}): "
+                f"{int(layer1_results['layer1_pass'].sum())}"
+            )
+
+            logger.info(
+                f"Running Layer 2 ({batch_progress}): "
+                "walk-forward validation..."
+            )
+
+            (
+                layer2_results,
+                layer2_window_results,
+            ) = run_layer2_validation(
+                backtest_results=backtest_results,
+                processed_data=processed_data,
+                save_output=True,
+                executor=executor,
+                batch_label=batch_label,
+            )
+
+            logger.info(
+                f"Layer 2 passes across full tested history "
+                f"({batch_progress}): "
+                f"{int(layer2_results['layer2_pass'].sum())}"
+            )
+
+            logger.info(
+                f"Running Layer 3 ({batch_progress}): "
+                "historical and synthetic stress..."
+            )
+
+            (
+                layer3_results,
+                layer3_historical_results,
+                layer3_synthetic_results,
+            ) = run_layer3_validation(
+                backtest_results=backtest_results,
+                processed_data=processed_data,
+                save_output=True,
+                executor=executor,
+                batch_label=batch_label,
+            )
+
+            logger.info(
+                f"Layer 3 passes across full tested history "
+                f"({batch_progress}): "
+                f"{int(layer3_results['layer3_pass'].sum())}"
+            )
+
+            logger.info(
+                f"Running Layer 4 ({batch_progress}): "
+                "statistical validation..."
+            )
+
+            (
+                layer4_results,
+                layer4_permutation_results,
+                layer4_bootstrap_results,
+            ) = run_layer4_validation(
+                backtest_results=backtest_results,
+                official_trial_count=official_trial_count,
+                save_output=True,
+                executor=executor,
+                batch_label=batch_label,
+            )
+
+            logger.info(
+                f"Layer 4 passes across full tested history "
+                f"({batch_progress}): "
+                f"{int(layer4_results['layer4_pass'].sum())}"
+            )
+
+            completed_batches += 1
+
+            # Release this batch's BacktestResult objects (each holds a
+            # full multi-year hourly timeseries + trades DataFrame) before
+            # the next batch allocates its own. No gc.collect(): nothing
+            # else references these objects once `del` runs, so CPython's
+            # refcounting frees the underlying pandas/numpy buffers
+            # immediately -- a full generational sweep would add overhead
+            # roughly batch_count times per run for no benefit, since
+            # there's no reference cycle here to break.
+            del backtest_results
+
+        if completed_batches == 0:
+            logger.info(
+                "No batches completed this pass (shutdown requested "
+                "before any batch started, or no candidates were due "
+                "for testing) -- skipping final funnel and reporting."
+            )
+        else:
+            # ==================================================================
+            # STAGE 5/6 -- FINAL FUNNEL
+            # By the last completed batch, candidate_metrics/layer{1-4}_results
+            # already hold the full upserted history across every batch of
+            # this run (plus all prior runs) -- each run_layerN_validation
+            # call above returns the merged, on-disk-persisted frame, not
+            # just that batch's own rows. So building the funnel once here,
+            # after the loop, reproduces exactly the same output as the
+            # pre-batching single-pass code.
+            # ==================================================================
+            logger.info("[5/6] Building final funnel...")
+
+            (
+                final_funnel,
+                final_survivors,
+            ) = build_final_funnel(
+                layer1_results=layer1_results,
+                layer2_results=layer2_results,
+                layer3_results=layer3_results,
+                layer4_results=layer4_results,
+                candidate_metrics=candidate_metrics,
+                save_output=True,
+            )
+
+            # ------------------------------------------------------------------
+            # Record this run's test events now that Layer 1-4 pass/fail and
+            # final_pass are all known together for every candidate tested
+            # this run. If anything above raised, execution never reaches
+            # this point, so no events get recorded and every due candidate
+            # simply stays due and is retried next run -- and if shutdown
+            # broke the loop early, only the candidates from batches that
+            # did complete are in final_funnel, so only those get recorded;
+            # the rest correctly remain due for the next pass.
+            # ------------------------------------------------------------------
+            if conn is not None:
+                tested_at = pd.Timestamp.now(tz="UTC").isoformat()
+                due_candidate_ids = set(due_population["candidate_id"])
+
+                events = [
+                    test_history.TestEvent(
+                        candidate_id=row.candidate_id,
+                        run_id=run_id,
+                        family=row.family,
+                        symbol=row.symbol,
+                        tested_at=tested_at,
+                        layer1_pass=bool(row.layer1_pass),
+                        layer2_pass=bool(row.layer2_pass),
+                        layer3_pass=bool(row.layer3_pass),
+                        layer4_pass=bool(row.layer4_pass),
+                        final_pass=bool(row.final_pass),
+                    )
+                    for row in final_funnel.loc[
+                        final_funnel["candidate_id"].isin(due_candidate_ids)
+                    ].itertuples()
+                ]
+
+                test_history.record_test_events(conn, events)
+
+                logger.info(
+                    f"Recorded {len(events)} test event(s) for run {run_id}."
+                )
     finally:
         if executor is not None:
             executor.shutdown()
 
         if conn is not None:
             conn.close()
+
+    if completed_batches == 0:
+        return
 
     # ======================================================================
     # STAGE 6/6 -- REPORTING OUTPUTS

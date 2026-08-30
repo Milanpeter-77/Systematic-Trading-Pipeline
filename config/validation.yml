@@ -14,7 +14,21 @@ cooldown:
 
 parallelism:
   enabled: true
-  max_workers: 2   # conservative default for the weaker always-on machine; 1 forces sequential
+  max_workers: 1   # forced sequential 2026-08-30: alpha-factory was getting OOM-killed entering
+                    # Layer 4 once the candidate population grew to ~1000; dropping to 1 worker
+                    # removes the second worker process's copy of in-flight candidate data while
+                    # the real fix (bounding peak memory as candidate count keeps growing) is
+                    # worked out. Revisit -- can likely raise this again -- once candidate_batching
+                    # below has been running on the deployment machine for a while.
+
+candidate_batching:
+  enabled: true
+  batch_size: 100   # candidates per batch through backtest -> Layer 1-4. Provisional: comfortably
+                     # undercuts the ~235-candidate population that ran fine unbatched
+                     # pre-strategy-expansion, while keeping the ~1000-candidate run to ~10 batches
+                     # so per-batch CSV-upsert overhead (5 files re-read+rewritten per batch) stays
+                     # negligible next to backtest/Layer4 compute time. Revisit once real peak-RSS
+                     # numbers are in from the deployment machine.
 
 loop:
   enabled: true
