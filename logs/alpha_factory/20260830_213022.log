@@ -103,3 +103,19 @@
 2026-08-31 10:30:24 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 10/10): OOS and parameter sensitivity...
 2026-08-31 10:45:49 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 1 passes across full tested history (batch 10/10): 184
 2026-08-31 10:45:49 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 2 (batch 10/10): walk-forward validation...
+2026-08-31 11:51:14 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 2 passes across full tested history (batch 10/10): 195
+2026-08-31 11:51:14 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 3 (batch 10/10): historical and synthetic stress...
+2026-08-31 11:51:18 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 3 passes across full tested history (batch 10/10): 486
+2026-08-31 11:51:18 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 4 (batch 10/10): statistical validation...
+2026-08-31 11:53:36 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 4 passes across full tested history (batch 10/10): 0
+2026-08-31 11:53:37 | INFO     | src.pipelines.alpha_factory.pipeline | [5/6] Building final funnel...
+2026-08-31 11:53:37 | INFO     | src.pipelines.alpha_factory.pipeline | Recorded 978 test event(s) for run 20260830_213022.
+2026-08-31 11:53:37 | INFO     | src.pipelines.alpha_factory.pipeline | [6/6] Building reporting outputs...
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY COMPLETED
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Official candidates: 1210
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Final survivors: 0
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Results directory: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Report summary: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results/report/report_summary.json
+2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Pass complete. Sleeping 24.0h until next check.

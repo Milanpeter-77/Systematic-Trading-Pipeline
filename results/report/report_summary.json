@@ -1,25 +1,25 @@
 {
-  "official_candidate_count": 232,
+  "official_candidate_count": 1210,
   "final_survivor_count": 0,
   "final_survival_rate": 0.0,
-  "best_full_sample_candidate": "volatility__USDJPY__num_std-2p5__window-20",
-  "best_full_sample_net_sharpe": 0.9887908625819056,
+  "best_full_sample_candidate": "stat_arb_rsi__AUDUSD_VOD__entry_band-20__window-48",
+  "best_full_sample_net_sharpe": 1.0272880933470838,
   "funnel": [
     {
       "stage": "Generated",
-      "survivors": 232
+      "survivors": 1210
     },
     {
       "stage": "Layer 1",
-      "survivors": 31
+      "survivors": 184
     },
     {
       "stage": "Layer 2",
-      "survivors": 14
+      "survivors": 114
     },
     {
       "stage": "Layer 3",
-      "survivors": 14
+      "survivors": 80
     },
     {
       "stage": "Layer 4",
