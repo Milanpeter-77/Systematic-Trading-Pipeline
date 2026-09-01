@@ -119,3 +119,7 @@
 2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Results directory: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results
 2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Report summary: /Users/milanpeter/Developer/Systematic-Trading-Pipeline/results/report/report_summary.json
 2026-08-31 11:53:39 | INFO     | src.pipelines.alpha_factory.pipeline | Pass complete. Sleeping 24.0h until next check.
+2026-09-01 12:00:05 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-01 12:00:05 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY PIPELINE
+2026-09-01 12:00:05 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-01 12:00:05 | INFO     | src.pipelines.alpha_factory.pipeline | [1/6] Screening for cointegrated pairs...
