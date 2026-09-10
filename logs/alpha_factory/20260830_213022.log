@@ -219,3 +219,4 @@
 2026-09-10 13:16:55 | INFO     | src.pipelines.alpha_factory.pipeline | 0 of 1102 candidates due for testing this run (1102 still within their 30-day cooldown).
 2026-09-10 13:16:55 | INFO     | src.pipelines.alpha_factory.pipeline | No batches completed this pass (shutdown requested before any batch started, or no candidates were due for testing) -- skipping final funnel and reporting.
 2026-09-10 13:16:55 | INFO     | src.pipelines.alpha_factory.pipeline | Pass complete. Sleeping 24.0h until next check.
+2026-09-10 19:26:38 | INFO     | src.pipelines.alpha_factory.pipeline | Received signal 15; will stop after the current pass.

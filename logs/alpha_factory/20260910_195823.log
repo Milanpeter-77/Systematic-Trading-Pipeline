@@ -1,0 +1,5 @@
+2026-09-10 19:58:23 | INFO     | src.pipelines.alpha_factory.pipeline | Logging to /Users/milanpeter/Developer/Systematic-Trading-Pipeline/logs/alpha_factory/20260910_195823.log
+2026-09-10 19:58:23 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-10 19:58:23 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY PIPELINE
+2026-09-10 19:58:23 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-10 19:58:23 | INFO     | src.pipelines.alpha_factory.pipeline | [1/6] Screening for cointegrated pairs...
