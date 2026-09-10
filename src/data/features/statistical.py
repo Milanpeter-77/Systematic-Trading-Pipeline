@@ -87,3 +87,61 @@ def compute_pair_spread(
     spread = aligned["a"] - intercept - hedge_ratio * aligned["b"]
 
     return spread, float(hedge_ratio)
+
+
+def compute_rolling_pair_spread(
+    price_a: pd.Series,
+    price_b: pd.Series,
+    window: int,
+) -> tuple[pd.Series, pd.Series]:
+    """
+    Rolling-window analogue of compute_pair_spread.
+
+    compute_pair_spread fixes the hedge ratio at screening time, estimated
+    once over the full overlapping history -- appropriate for stat_arb's
+    other strategies, which all trade a single precomputed spread pseudo-
+    instrument. This instead re-estimates the OLS hedge ratio (and
+    intercept) inside a trailing window, so the spread adapts as the
+    relationship between the two legs drifts over time. Used by
+    stat_arb/rolling_hedge_zscore.py, which (unlike its siblings) receives
+    both legs' raw close prices rather than a single already-collapsed
+    spread column.
+
+    Returns (spread, hedge_ratio), both indexed like the aligned input
+    series -- hedge_ratio is a time series here, not the single scalar
+    compute_pair_spread returns.
+    """
+    aligned = pd.concat(
+        [price_a.rename("a"), price_b.rename("b")],
+        axis=1,
+        join="inner",
+    ).dropna()
+
+    rolling_cov = aligned["a"].rolling(
+        window=window,
+        min_periods=window,
+    ).cov(aligned["b"])
+
+    rolling_var = aligned["b"].rolling(
+        window=window,
+        min_periods=window,
+    ).var(ddof=0)
+
+    valid_var = rolling_var.where(rolling_var > 0)
+    hedge_ratio = rolling_cov / valid_var
+
+    rolling_mean_a = aligned["a"].rolling(
+        window=window,
+        min_periods=window,
+    ).mean()
+
+    rolling_mean_b = aligned["b"].rolling(
+        window=window,
+        min_periods=window,
+    ).mean()
+
+    intercept = rolling_mean_a - hedge_ratio * rolling_mean_b
+
+    spread = aligned["a"] - intercept - hedge_ratio * aligned["b"]
+
+    return spread, hedge_ratio

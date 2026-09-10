@@ -26,6 +26,39 @@ POLICY_RATE_SERIES_BY_CURRENCY = {
     "JPY": "IRSTCI01JPM156N",
 }
 
+# Interest Rates: Long-Term Government Bond Yields: 10-Year -- the same
+# OECD series family/naming pattern as POLICY_RATE_SERIES_BY_CURRENCY,
+# confirmed live for all five currencies via FRED's own CSV endpoint.
+LONG_TERM_YIELD_SERIES_BY_CURRENCY = {
+    "USD": "IRLTLT01USM156N",
+    "EUR": "IRLTLT01EZM156N",
+    "GBP": "IRLTLT01GBM156N",
+    "AUD": "IRLTLT01AUM156N",
+    "JPY": "IRLTLT01JPM156N",
+}
+
+# Consumer Price Index, monthly, growth rate over same period the previous
+# year -- confirmed live for all five currencies, but NOT a uniform naming
+# pattern like the two series dicts above: EUR uses the HICP mnemonic
+# (CPHPTT01, not CPALTT01 -- CPALTT01EZM657N does not exist on FRED,
+# confirmed 404) and AUD only publishes CPI quarterly, not monthly
+# (CPALTT01AUM657N/659N both 404; CPALTT01AUQ657N is the real series).
+# The AUD series' quarterly cadence means real_rate_differential for
+# AUDUSD will hold flat for longer stretches than the other pairs once
+# forward-filled onto hourly bars -- an honest consequence of the data,
+# not a bug, the same kind of reporting-lag caveat
+# add_interest_rate_differential already documents for EUR.
+INFLATION_SERIES_BY_CURRENCY = {
+    "USD": "CPALTT01USM657N",
+    "GBP": "CPALTT01GBM657N",
+    "JPY": "CPALTT01JPM657N",
+    "EUR": "CPHPTT01EZM657N",
+    "AUD": "CPALTT01AUQ657N",
+}
+
+# CBOE Volatility Index -- a single global series, not per-currency.
+VIX_SERIES_ID = "VIXCLS"
+
 
 def load_api_key() -> str:
     """
@@ -114,6 +147,74 @@ def fetch_policy_rate(
 
     return fetch_fred_series(
         series_id,
+        api_key=api_key,
+        observation_start=observation_start,
+    )
+
+
+def fetch_long_term_yield(
+    currency: str,
+    api_key: str | None = None,
+    observation_start: str = "2019-01-01",
+) -> pd.Series:
+    """
+    Fetch a currency's 10-year government bond yield proxy by 3-letter
+    code.
+    """
+    try:
+        series_id = LONG_TERM_YIELD_SERIES_BY_CURRENCY[currency.upper()]
+    except KeyError as error:
+        available = sorted(LONG_TERM_YIELD_SERIES_BY_CURRENCY)
+
+        raise ValueError(
+            f"No FRED long-term-yield series configured for currency "
+            f"'{currency}'. Available: {available}"
+        ) from error
+
+    return fetch_fred_series(
+        series_id,
+        api_key=api_key,
+        observation_start=observation_start,
+    )
+
+
+def fetch_inflation_rate(
+    currency: str,
+    api_key: str | None = None,
+    observation_start: str = "2019-01-01",
+) -> pd.Series:
+    """
+    Fetch a currency's YoY CPI/HICP inflation rate by 3-letter code.
+
+    See INFLATION_SERIES_BY_CURRENCY's own comment for the two naming/
+    cadence exceptions (EUR's HICP mnemonic, AUD's quarterly-only series).
+    """
+    try:
+        series_id = INFLATION_SERIES_BY_CURRENCY[currency.upper()]
+    except KeyError as error:
+        available = sorted(INFLATION_SERIES_BY_CURRENCY)
+
+        raise ValueError(
+            f"No FRED inflation series configured for currency "
+            f"'{currency}'. Available: {available}"
+        ) from error
+
+    return fetch_fred_series(
+        series_id,
+        api_key=api_key,
+        observation_start=observation_start,
+    )
+
+
+def fetch_vix(
+    api_key: str | None = None,
+    observation_start: str = "2019-01-01",
+) -> pd.Series:
+    """
+    Fetch the CBOE VIX (a single global series, not per-currency).
+    """
+    return fetch_fred_series(
+        VIX_SERIES_ID,
         api_key=api_key,
         observation_start=observation_start,
     )

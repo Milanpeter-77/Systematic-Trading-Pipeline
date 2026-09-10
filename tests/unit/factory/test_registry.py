@@ -10,27 +10,45 @@ EXPECTED_FAMILIES = {
     "trend",
     "trend_sma",
     "trend_donchian",
+    "trend_macd",
+    "trend_adx",
+    "trend_psar",
     "mean_reversion",
     "mean_reversion_rsi",
     "mean_reversion_return_zscore",
+    "mean_reversion_bollinger",
+    "mean_reversion_keltner",
+    "mean_reversion_vwap",
     "momentum",
     "momentum_ewma",
     "momentum_risk_adjusted",
+    "momentum_macd_histogram",
+    "momentum_volume_confirmed",
+    "momentum_acceleration",
     "volatility",
     "volatility_atr",
     "volatility_range_expansion",
+    "volatility_vix_regime",
+    "volatility_mean_reversion",
+    "volatility_squeeze",
     "stat_arb",
     "stat_arb_rsi",
     "stat_arb_return_zscore",
+    "stat_arb_macd",
+    "stat_arb_rolling_hedge",
+    "stat_arb_correlation_breakdown",
     "carry",
     "carry_rate_momentum",
     "carry_zscore",
+    "carry_real_rate",
+    "carry_term_slope",
+    "carry_risk_adjusted",
 }
 
 
-def test_registry_has_three_strategies_per_family():
+def test_registry_matches_expected_families():
     assert set(STRATEGY_REGISTRY) == EXPECTED_FAMILIES
-    assert len(STRATEGY_REGISTRY) == 18
+    assert len(STRATEGY_REGISTRY) == 36
 
 
 def test_every_registered_class_is_keyed_by_its_own_family_name():

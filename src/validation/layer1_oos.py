@@ -534,6 +534,237 @@ def generate_parameter_neighbors(
                 ),
             }
 
+        elif candidate.family == "trend_macd":
+            fast_span = int(
+                parameters["fast_span"]
+            )
+            slow_span = int(
+                parameters["slow_span"]
+            )
+
+            if fast_span >= slow_span:
+                continue
+
+            parameters = {
+                "fast_span": fast_span,
+                "slow_span": slow_span,
+                "signal_span": int(
+                    parameters["signal_span"]
+                ),
+            }
+
+        elif candidate.family == "trend_adx":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "adx_threshold": float(
+                    parameters["adx_threshold"]
+                ),
+            }
+
+        elif candidate.family == "trend_psar":
+            acceleration_step = float(
+                parameters["acceleration_step"]
+            )
+            acceleration_max = float(
+                parameters["acceleration_max"]
+            )
+
+            if acceleration_step > acceleration_max:
+                continue
+
+            parameters = {
+                "acceleration_step": acceleration_step,
+                "acceleration_max": acceleration_max,
+            }
+
+        elif candidate.family == "mean_reversion_bollinger":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "num_std": float(
+                    parameters["num_std"]
+                ),
+                "entry_band": float(
+                    parameters["entry_band"]
+                ),
+            }
+
+        elif candidate.family == "mean_reversion_keltner":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "atr_multiple": float(
+                    parameters["atr_multiple"]
+                ),
+                "exit_atr_multiple": float(
+                    parameters["exit_atr_multiple"]
+                ),
+            }
+
+        elif candidate.family == "mean_reversion_vwap":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
+                ),
+            }
+
+        elif candidate.family == "momentum_macd_histogram":
+            fast_span = int(
+                parameters["fast_span"]
+            )
+            slow_span = int(
+                parameters["slow_span"]
+            )
+
+            if fast_span >= slow_span:
+                continue
+
+            parameters = {
+                "fast_span": fast_span,
+                "slow_span": slow_span,
+                "signal_span": int(
+                    parameters["signal_span"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "momentum_volume_confirmed":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "return_threshold": float(
+                    parameters["return_threshold"]
+                ),
+                "volume_ratio": float(
+                    parameters["volume_ratio"]
+                ),
+            }
+
+        elif candidate.family == "momentum_acceleration":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "stat_arb_macd":
+            fast_span = int(
+                parameters["fast_span"]
+            )
+            slow_span = int(
+                parameters["slow_span"]
+            )
+
+            if fast_span >= slow_span:
+                continue
+
+            parameters = {
+                "fast_span": fast_span,
+                "slow_span": slow_span,
+                "signal_span": int(
+                    parameters["signal_span"]
+                ),
+            }
+
+        elif candidate.family == "stat_arb_rolling_hedge":
+            parameters = {
+                "lookback": int(
+                    parameters["lookback"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
+                ),
+                "exit_z": float(
+                    parameters["exit_z"]
+                ),
+            }
+
+        elif candidate.family == "stat_arb_correlation_breakdown":
+            parameters = {
+                "corr_window": int(
+                    parameters["corr_window"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
+                ),
+                "exit_z": float(
+                    parameters["exit_z"]
+                ),
+            }
+
+        elif candidate.family == "carry_real_rate":
+            parameters = {
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "carry_term_slope":
+            parameters = {
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "carry_risk_adjusted":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "volatility_vix_regime":
+            parameters = {
+                "realized_vol_window": int(
+                    parameters["realized_vol_window"]
+                ),
+                "threshold": float(
+                    parameters["threshold"]
+                ),
+            }
+
+        elif candidate.family == "volatility_mean_reversion":
+            parameters = {
+                "short_window": int(
+                    parameters["short_window"]
+                ),
+                "entry_z": float(
+                    parameters["entry_z"]
+                ),
+                "exit_z": float(
+                    parameters["exit_z"]
+                ),
+            }
+
+        elif candidate.family == "volatility_squeeze":
+            parameters = {
+                "window": int(
+                    parameters["window"]
+                ),
+                "num_std": float(
+                    parameters["num_std"]
+                ),
+                "atr_multiple": float(
+                    parameters["atr_multiple"]
+                ),
+            }
+
         else:
             raise ValueError(
                 f"Unsupported family: {candidate.family}"

@@ -7,7 +7,12 @@ from typing import Any
 
 import pandas as pd
 
-from src.data.fred.client import fetch_policy_rate
+from src.data.fred.client import (
+    fetch_inflation_rate,
+    fetch_long_term_yield,
+    fetch_policy_rate,
+    fetch_vix,
+)
 from src.data.ibkr.historical import HistoricalDataClient
 from src.data.retrieval import (
     DEFAULT_BACKFILL_START,
@@ -95,6 +100,105 @@ def add_interest_rate_differential(
     return result
 
 
+def add_real_rate_differential(
+    data: pd.DataFrame,
+    instrument_config: dict[str, Any],
+) -> pd.DataFrame:
+    """
+    Add a real_rate_differential column to an FX instrument's H1 bars:
+    each leg's policy rate minus its own inflation rate, differenced
+    across the pair the same way add_interest_rate_differential differences
+    the raw policy rate. Only applies to CASH (FX) instruments, for the
+    same reason add_interest_rate_differential is CASH-only -- a real-rate
+    differential only makes sense for a currency pair.
+
+    See src.data.fred.client.INFLATION_SERIES_BY_CURRENCY for the AUD
+    (quarterly-cadence) and EUR (HICP mnemonic) naming/cadence exceptions
+    this inherits.
+    """
+    if instrument_config["sec_type"] != "CASH":
+        return data
+
+    base_currency = instrument_config["ibkr_symbol"]
+    quote_currency = instrument_config["currency"]
+
+    base_real_rate = (
+        fetch_policy_rate(base_currency) - fetch_inflation_rate(base_currency)
+    )
+    quote_real_rate = (
+        fetch_policy_rate(quote_currency)
+        - fetch_inflation_rate(quote_currency)
+    )
+
+    differential = (base_real_rate - quote_real_rate).dropna().sort_index()
+
+    result = data.copy()
+
+    result["real_rate_differential"] = differential.reindex(
+        result.index, method="ffill"
+    )
+
+    return result
+
+
+def add_term_slope_differential(
+    data: pd.DataFrame,
+    instrument_config: dict[str, Any],
+) -> pd.DataFrame:
+    """
+    Add a term_slope_differential column to an FX instrument's H1 bars:
+    each leg's 10-year yield minus its own policy rate (a term-structure
+    roll-down proxy), differenced across the pair the same way
+    add_interest_rate_differential differences the raw policy rate. Only
+    applies to CASH (FX) instruments, for the same reason
+    add_interest_rate_differential is CASH-only.
+    """
+    if instrument_config["sec_type"] != "CASH":
+        return data
+
+    base_currency = instrument_config["ibkr_symbol"]
+    quote_currency = instrument_config["currency"]
+
+    base_slope = (
+        fetch_long_term_yield(base_currency) - fetch_policy_rate(base_currency)
+    )
+    quote_slope = (
+        fetch_long_term_yield(quote_currency)
+        - fetch_policy_rate(quote_currency)
+    )
+
+    differential = (base_slope - quote_slope).dropna().sort_index()
+
+    result = data.copy()
+
+    result["term_slope_differential"] = differential.reindex(
+        result.index, method="ffill"
+    )
+
+    return result
+
+
+def add_vix_regime(
+    data: pd.DataFrame,
+    instrument_config: dict[str, Any],
+) -> pd.DataFrame:
+    """
+    Add a vix_level column to every instrument's H1 bars, forward-filled
+    from FRED's daily VIX series.
+
+    Unlike the CASH-only differential hooks above, this applies to every
+    instrument regardless of asset class -- VIX is a single global
+    systemic-risk gauge, not a currency-pair-specific quantity.
+    """
+    vix = fetch_vix().sort_index()
+
+    result = data.copy()
+
+    result["vix_level"] = vix.reindex(result.index, method="ffill")
+
+    return result
+
+
 def process_instrument(
     symbol: str,
     raw_data: pd.DataFrame,
@@ -111,6 +215,21 @@ def process_instrument(
     )
 
     cleaned_data = add_interest_rate_differential(
+        data=cleaned_data,
+        instrument_config=instrument_config,
+    )
+
+    cleaned_data = add_real_rate_differential(
+        data=cleaned_data,
+        instrument_config=instrument_config,
+    )
+
+    cleaned_data = add_term_slope_differential(
+        data=cleaned_data,
+        instrument_config=instrument_config,
+    )
+
+    cleaned_data = add_vix_regime(
         data=cleaned_data,
         instrument_config=instrument_config,
     )

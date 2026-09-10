@@ -206,6 +206,20 @@ def prepare_pair_features(
                 "low": price_like_spread,
                 "close": price_like_spread,
                 "fill_spread_fraction": combined_spread_fraction,
+                # Both legs' own raw close prices, reindexed onto the
+                # spread's index -- every existing stat_arb strategy keeps
+                # reading close exactly as before, unaffected. This only
+                # exists for strategies that need to re-derive a spread
+                # themselves (e.g. stat_arb/rolling_hedge_zscore.py's
+                # rolling hedge ratio, stat_arb/correlation_breakdown.py's
+                # rolling leg correlation) rather than trade the single
+                # static-hedge-ratio spread computed above.
+                "leg_a_close": processed_data[symbol_a]["close"].reindex(
+                    spread.index
+                ),
+                "leg_b_close": processed_data[symbol_b]["close"].reindex(
+                    spread.index
+                ),
             }
         )
         pair_frame.index.name = "timestamp"
