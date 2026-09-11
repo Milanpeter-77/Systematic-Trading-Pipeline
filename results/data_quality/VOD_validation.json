@@ -4,9 +4,9 @@
   "expected_session": "broker_defined",
   "tick_size": 0.01,
   "symbol": "VOD",
-  "row_count": 15162,
+  "row_count": 15164,
   "start_timestamp": "2020-01-02T08:00:00+00:00",
-  "end_timestamp": "2026-09-10T15:00:00+00:00",
+  "end_timestamp": "2026-09-11T08:00:00+00:00",
   "invalid_timestamp_count": 0,
   "duplicate_timestamp_rows": 0,
   "missing_required_value_count": 0,
@@ -14,9 +14,9 @@
   "invalid_ohlc_count": 0,
   "extreme_return_count": 54,
   "extreme_range_count": 355,
-  "unexpected_gap_count": 1689,
+  "unexpected_gap_count": 1690,
   "largest_time_gap_minutes": 6960.0,
   "removed_invalid_rows": 0,
   "duplicate_rows_identified": 0,
-  "rows_after_cleaning": 15162
+  "rows_after_cleaning": 15164
 }
