@@ -1,0 +1,25 @@
+2026-09-11 08:22:30 | INFO     | src.pipelines.alpha_factory.pipeline | Logging to /Users/milanpeter/Developer/Systematic-Trading-Pipeline/logs/alpha_factory/20260911_082230.log
+2026-09-11 08:22:30 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-11 08:22:30 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY PIPELINE
+2026-09-11 08:22:30 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-11 08:22:30 | INFO     | src.pipelines.alpha_factory.pipeline | [1/6] Screening for cointegrated pairs...
+2026-09-11 08:25:35 | INFO     | src.pipelines.alpha_factory.pipeline | Found 2 cointegrated pair(s): ['AUDUSD_VOD', 'XAGUSD_XAUUSD']
+2026-09-11 08:25:35 | INFO     | src.pipelines.alpha_factory.pipeline | [2/6] Generating strategy candidates...
+2026-09-11 08:25:35 | INFO     | src.pipelines.alpha_factory.pipeline | Generated 2634 official candidates.
+2026-09-11 08:25:35 | INFO     | src.pipelines.alpha_factory.pipeline | 1532 of 2634 candidates due for testing this run (1102 still within their 30-day cooldown).
+2026-09-11 08:25:35 | INFO     | src.pipelines.alpha_factory.pipeline | [3/6] Running candidate backtests (batch 1/16, 100 candidates)...
+2026-09-11 08:26:12 | INFO     | src.pipelines.alpha_factory.pipeline | Completed 100 candidate backtests (batch 1/16).
+2026-09-11 08:26:12 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 1/16): OOS and parameter sensitivity...
+2026-09-11 08:33:11 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-1p5__window-20: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:33:40 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-1p5__window-40: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:33:56 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-1p5__window-80: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:34:07 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-2__window-20: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:34:14 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-2__window-40: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:34:18 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-2__window-80: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:34:46 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-2p5__window-20: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:35:04 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-2p5__window-40: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:35:17 | WARNING  | src.validation.layer1_oos | Layer 1 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-2p5__window-80: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 08:38:09 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 1 passes across full tested history (batch 1/16): 194
+2026-09-11 08:38:09 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 2 (batch 1/16): walk-forward validation...
+2026-09-11 09:01:48 | WARNING  | src.validation.layer2_walkforward | Layer 2 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-1p5__window-20: ValueError: entry_band must be strictly between 0 and 0.5.
+2026-09-11 09:01:59 | WARNING  | src.validation.layer2_walkforward | Layer 2 evaluation raised for mean_reversion_bollinger__AUDUSD__entry_band-0p45__num_std-1p5__window-40: ValueError: entry_band must be strictly between 0 and 0.5.
