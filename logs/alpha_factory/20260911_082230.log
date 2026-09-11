@@ -196,3 +196,47 @@
 2026-09-11 16:38:20 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 5/16): OOS and parameter sensitivity...
 2026-09-11 16:55:06 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 1 passes across full tested history (batch 5/16): 230
 2026-09-11 16:55:06 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 2 (batch 5/16): walk-forward validation...
+2026-09-11 18:02:16 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 2 passes across full tested history (batch 5/16): 229
+2026-09-11 18:02:16 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 3 (batch 5/16): historical and synthetic stress...
+2026-09-11 18:02:23 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 3 passes across full tested history (batch 5/16): 731
+2026-09-11 18:02:23 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 4 (batch 5/16): statistical validation...
+2026-09-11 18:03:35 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__AUDUSD__entry_z-1p5__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:03:37 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__AUDUSD__entry_z-1p5__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:03:38 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__AUDUSD__entry_z-1p5__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:03:40 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__AUDUSD__entry_z-2__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:03:42 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__AUDUSD__entry_z-2__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:03:43 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__AUDUSD__entry_z-2__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:03:45 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__EURUSD__entry_z-1p5__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:03:47 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__EURUSD__entry_z-1p5__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:03:49 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__EURUSD__entry_z-1p5__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:03:50 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__EURUSD__entry_z-2__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:03:52 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__EURUSD__entry_z-2__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:03:54 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__EURUSD__entry_z-2__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:03:56 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__GBPUSD__entry_z-1p5__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:03:58 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__GBPUSD__entry_z-1p5__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:03:59 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__GBPUSD__entry_z-1p5__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:04:01 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__GBPUSD__entry_z-2__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:04:03 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__GBPUSD__entry_z-2__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:04:05 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__GBPUSD__entry_z-2__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:04:11 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__USDJPY__entry_z-1p5__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:04:12 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__USDJPY__entry_z-1p5__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:04:14 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__USDJPY__entry_z-1p5__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:04:16 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__USDJPY__entry_z-2__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:04:18 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__USDJPY__entry_z-2__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:04:20 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__USDJPY__entry_z-2__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:04:26 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAGUSD__entry_z-1p5__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:04:28 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAGUSD__entry_z-1p5__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:04:29 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAGUSD__entry_z-1p5__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:04:31 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAGUSD__entry_z-2__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:04:32 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAGUSD__entry_z-2__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:04:34 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAGUSD__entry_z-2__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:04:36 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAUUSD__entry_z-1p5__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:04:37 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAUUSD__entry_z-1p5__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:04:39 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAUUSD__entry_z-1p5__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:04:41 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAUUSD__entry_z-2__lookback-24: ValueError: No valid trade returns available.
+2026-09-11 18:04:42 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAUUSD__entry_z-2__lookback-48: ValueError: No valid trade returns available.
+2026-09-11 18:04:44 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for mean_reversion_vwap__XAUUSD__entry_z-2__lookback-96: ValueError: No valid trade returns available.
+2026-09-11 18:05:23 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 4 passes across full tested history (batch 5/16): 0
+2026-09-11 18:05:23 | INFO     | src.pipelines.alpha_factory.pipeline | [3/6] Running candidate backtests (batch 6/16, 100 candidates)...
+2026-09-11 18:08:11 | INFO     | src.pipelines.alpha_factory.pipeline | Completed 100 candidate backtests (batch 6/16).
+2026-09-11 18:08:11 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 6/16): OOS and parameter sensitivity...
