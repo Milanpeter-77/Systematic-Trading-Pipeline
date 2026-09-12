@@ -271,3 +271,33 @@
 2026-09-12 08:51:14 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 8/16): OOS and parameter sensitivity...
 2026-09-12 10:26:13 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 1 passes across full tested history (batch 8/16): 256
 2026-09-12 10:26:13 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 2 (batch 8/16): walk-forward validation...
+2026-09-12 16:18:09 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 2 passes across full tested history (batch 8/16): 239
+2026-09-12 16:18:09 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 3 (batch 8/16): historical and synthetic stress...
+2026-09-12 16:18:15 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 3 passes across full tested history (batch 8/16): 853
+2026-09-12 16:18:15 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 4 (batch 8/16): statistical validation...
+2026-09-12 16:19:47 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_macd_histogram__XAUUSD__fast_span-24__signal_span-18__slow_span-26__threshold-0p0005: ValueError: No valid trade returns available.
+2026-09-12 16:19:59 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_macd_histogram__XAUUSD__fast_span-24__signal_span-9__slow_span-26__threshold-0p0005: ValueError: No valid trade returns available.
+2026-09-12 16:20:05 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-24__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:12 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-24__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:17 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-24__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:22 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-48__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:28 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-48__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:34 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-48__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:39 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-96__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:44 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-96__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:50 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__AUDUSD__lookback-96__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:20:55 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-24__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:02 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-24__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:07 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-24__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:12 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-48__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:18 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-48__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:23 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-48__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:28 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-96__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:34 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-96__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:39 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__EURUSD__lookback-96__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 16:21:39 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 4 passes across full tested history (batch 8/16): 0
+2026-09-12 16:21:39 | INFO     | src.pipelines.alpha_factory.pipeline | [3/6] Running candidate backtests (batch 9/16, 100 candidates)...
+2026-09-12 16:22:46 | INFO     | src.pipelines.alpha_factory.pipeline | Completed 100 candidate backtests (batch 9/16).
+2026-09-12 16:22:46 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 9/16): OOS and parameter sensitivity...
+2026-09-12 16:38:23 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 1 passes across full tested history (batch 9/16): 257
+2026-09-12 16:38:23 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 2 (batch 9/16): walk-forward validation...
