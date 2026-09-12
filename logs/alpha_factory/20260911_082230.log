@@ -301,3 +301,29 @@
 2026-09-12 16:22:46 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 9/16): OOS and parameter sensitivity...
 2026-09-12 16:38:23 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 1 passes across full tested history (batch 9/16): 257
 2026-09-12 16:38:23 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 2 (batch 9/16): walk-forward validation...
+2026-09-12 17:43:56 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 2 passes across full tested history (batch 9/16): 239
+2026-09-12 17:43:56 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 3 (batch 9/16): historical and synthetic stress...
+2026-09-12 17:44:01 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 3 passes across full tested history (batch 9/16): 905
+2026-09-12 17:44:01 | INFO     | src.pipelines.alpha_factory.pipeline | Running Layer 4 (batch 9/16): statistical validation...
+2026-09-12 17:44:06 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-24__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:12 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-24__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:17 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-24__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:22 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-48__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:28 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-48__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:34 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-48__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:39 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-96__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:44 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-96__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:44:50 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__GBPUSD__lookback-96__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:19 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-24__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:25 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-24__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:30 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-24__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:35 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-48__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:41 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-48__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:47 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-48__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:52 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-96__return_threshold-0__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:45:57 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-96__return_threshold-0p01__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:46:03 | WARNING  | src.validation.layer4_statistics | Layer 4 evaluation raised for momentum_volume_confirmed__USDJPY__lookback-96__return_threshold-0p02__volume_ratio-1: ValueError: No valid trade returns available.
+2026-09-12 17:46:21 | INFO     | src.pipelines.alpha_factory.pipeline | Layer 4 passes across full tested history (batch 9/16): 0
+2026-09-12 17:46:21 | INFO     | src.pipelines.alpha_factory.pipeline | [3/6] Running candidate backtests (batch 10/16, 100 candidates)...
+2026-09-12 17:47:24 | INFO     | src.pipelines.alpha_factory.pipeline | Completed 100 candidate backtests (batch 10/16).
+2026-09-12 17:47:24 | INFO     | src.pipelines.alpha_factory.pipeline | [4/6] Running Layer 1 (batch 10/16): OOS and parameter sensitivity...
