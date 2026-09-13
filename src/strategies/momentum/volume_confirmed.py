@@ -59,6 +59,7 @@ class MomentumVolumeConfirmedStrategy(BaseStrategy):
         "volume_ratio": [1.0, 1.5, 2.0],
     }
     enabled = True
+    requires_real_volume = True
 
     def validate_parameters(self) -> None:
         super().validate_parameters()

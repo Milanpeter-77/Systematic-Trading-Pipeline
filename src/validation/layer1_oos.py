@@ -19,6 +19,7 @@ from src.backtest.metrics import (
 )
 from src.backtest.result import BacktestResult
 from src.factory.candidate import CandidateSpec
+from src.factory.registry import create_strategy
 
 
 logger = logging.getLogger(__name__)
@@ -289,7 +290,12 @@ def generate_parameter_neighbors(
     - four single-parameter changes;
     - four joint changes.
 
-    The original parameter combination is excluded.
+    The original parameter combination is excluded. A perturbed combination
+    that falls outside the strategy's own valid parameter domain (e.g.
+    entry_band=0.45 perturbed to 0.54, past mean_reversion_bollinger's
+    strict 0.5 ceiling) is skipped rather than propagating the strategy's
+    validation error, since that would otherwise fail the whole candidate
+    over an out-of-domain neighbor rather than just excluding that neighbor.
     """
     if not 0 < perturbation < 1:
         raise ValueError(
@@ -769,6 +775,14 @@ def generate_parameter_neighbors(
             raise ValueError(
                 f"Unsupported family: {candidate.family}"
             )
+
+        try:
+            create_strategy(
+                family=candidate.family,
+                parameters=parameters,
+            )
+        except (TypeError, ValueError):
+            continue
 
         neighbors.append(
             CandidateSpec(

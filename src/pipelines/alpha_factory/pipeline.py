@@ -293,6 +293,22 @@ def build_candidate_population(
             if family == "stat_arb" or family.startswith("stat_arb_"):
                 family_symbol_overrides[family] = pair_symbols
 
+    # what_to_show == "TRADES" means IBKR is reporting a real trade tape
+    # (equities); "MIDPOINT" (used for FX and spot metals here, which have
+    # no consolidated trade tape) means the volume column is a constant -1
+    # sentinel, not a genuine traded quantity. A strategy that reads volume
+    # directly (requires_real_volume) must be confined to the former, or it
+    # silently never generates a real signal on the latter.
+    real_volume_symbols = [
+        symbol
+        for symbol, settings in instrument_config.items()
+        if settings["what_to_show"] == "TRADES"
+    ]
+
+    for family, strategy_class in STRATEGY_REGISTRY.items():
+        if strategy_class.requires_real_volume:
+            family_symbol_overrides[family] = real_volume_symbols
+
     candidates = generate_candidates(
         symbols=list(
             instrument_config

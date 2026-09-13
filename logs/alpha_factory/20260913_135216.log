@@ -1,0 +1,13 @@
+2026-09-13 13:52:16 | INFO     | src.pipelines.alpha_factory.pipeline | Logging to /Users/milanpeter/Documents/Repositories/Systematic-Trading-Pipeline/logs/alpha_factory/20260913_135216.log
+2026-09-13 13:52:16 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-13 13:52:16 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY PIPELINE
+2026-09-13 13:52:16 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-13 13:52:16 | INFO     | src.pipelines.alpha_factory.pipeline | [1/6] Screening for cointegrated pairs...
+2026-09-13 13:52:28 | INFO     | src.pipelines.alpha_factory.pipeline | Received signal 15; will stop after the current pass.
+2026-09-13 13:52:57 | INFO     | src.pipelines.alpha_factory.pipeline | Found 2 cointegrated pair(s): ['AUDUSD_VOD', 'XAGUSD_XAUUSD']
+2026-09-13 13:52:57 | INFO     | src.pipelines.alpha_factory.pipeline | [2/6] Generating strategy candidates...
+2026-09-13 13:52:58 | INFO     | src.pipelines.alpha_factory.pipeline | Generated 2436 official candidates.
+2026-09-13 13:52:58 | INFO     | src.pipelines.alpha_factory.pipeline | 72 of 2436 candidates due for testing this run (2364 still within their 30-day cooldown).
+2026-09-13 13:52:58 | INFO     | src.pipelines.alpha_factory.pipeline | Shutdown requested; stopping after 0/1 batch(es) completed this pass.
+2026-09-13 13:52:58 | INFO     | src.pipelines.alpha_factory.pipeline | No batches completed this pass (shutdown requested before any batch started, or no candidates were due for testing) -- skipping final funnel and reporting.
+2026-09-13 13:52:58 | INFO     | src.pipelines.alpha_factory.pipeline | Shutdown requested, exiting.

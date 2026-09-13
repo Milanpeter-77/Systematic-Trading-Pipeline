@@ -56,6 +56,7 @@ class MeanReversionVwapDeviationStrategy(BaseStrategy):
         "entry_z": [1.5, 2.0],
     }
     enabled = True
+    requires_real_volume = True
 
     def validate_parameters(self) -> None:
         super().validate_parameters()

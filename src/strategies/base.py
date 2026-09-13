@@ -20,6 +20,13 @@ class BaseStrategy(ABC):
     parameter_grid: dict[str, list[int | float]]
     enabled: bool
 
+    # Most families only need close (and, for stat_arb, a paired series).
+    # A strategy that reads the volume column directly should set this so
+    # it can be routed away from instruments where volume is a non-trade
+    # sentinel (e.g. IBKR's constant -1 for MIDPOINT-only FX/CFD feeds)
+    # rather than a genuine traded quantity.
+    requires_real_volume: bool = False
+
     def __init__(self, **parameters: Any) -> None:
         self.parameters = parameters
         self.validate_parameters()
