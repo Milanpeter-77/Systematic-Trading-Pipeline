@@ -1,27 +1,29 @@
 layer,failure_reason,candidate_failures
-layer1,oos_net_sharpe,911
-layer1,positive_neighbor_count,818
-layer1,oos_net_return,808
-layer1,median_neighbor_sharpe,771
-layer1,worst_neighbor_sharpe,679
-layer1,trade_profit_concentration,220
-layer1,oos_trade_count,114
-layer1,no_valid_neighbors,4
-layer2,minimum_oos_sharpe,924
-layer2,minimum_profitable_fold_share,830
-layer2,minimum_oos_return,811
-layer2,maximum_drawdown,456
-layer2,minimum_oos_trades,85
-layer3,synthetic_drawdown,703
-layer3,synthetic_terminal_nav,533
-layer3,synthetic_total_return,533
-layer3,worst_window_drawdown,76
-layer3,worst_window_net_return,63
-layer3,march_2020_drawdown,55
-layer3,march_2020_net_return,24
-layer4,deflated_sharpe_probability,1209
-layer4,permutation_p_value,1082
-layer4,bootstrap_probability_negative_return,1027
-layer4,bootstrap_drawdown_p95,757
-layer4,bootstrap_trade_count,85
-layer4,exception: ValueError: No valid trade returns available.,1
+layer1,oos_net_sharpe,2054
+layer1,oos_net_return,1825
+layer1,median_neighbor_sharpe,1720
+layer1,positive_neighbor_count,1699
+layer1,worst_neighbor_sharpe,1521
+layer1,trade_profit_concentration,536
+layer1,oos_trade_count,372
+layer1,exception: ValueError: entry_band must be strictly between 0 and 0.5.,72
+layer1,no_valid_neighbors,12
+layer2,minimum_oos_sharpe,2138
+layer2,minimum_profitable_fold_share,1923
+layer2,minimum_oos_return,1892
+layer2,maximum_drawdown,1069
+layer2,minimum_oos_trades,287
+layer2,exception: ValueError: entry_band must be strictly between 0 and 0.5.,72
+layer3,synthetic_drawdown,1578
+layer3,synthetic_terminal_nav,1281
+layer3,synthetic_total_return,1281
+layer3,worst_window_drawdown,120
+layer3,march_2020_drawdown,117
+layer3,worst_window_net_return,109
+layer3,march_2020_net_return,57
+layer4,deflated_sharpe_probability,2640
+layer4,permutation_p_value,2334
+layer4,bootstrap_probability_negative_return,2275
+layer4,bootstrap_drawdown_p95,1713
+layer4,bootstrap_trade_count,194
+layer4,exception: ValueError: No valid trade returns available.,102
