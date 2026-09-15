@@ -19,3 +19,7 @@
 2026-09-14 14:52:47 | INFO     | src.pipelines.alpha_factory.pipeline | 0 of 2436 candidates due for testing this run (2436 still within their 30-day cooldown).
 2026-09-14 14:52:47 | INFO     | src.pipelines.alpha_factory.pipeline | No batches completed this pass (shutdown requested before any batch started, or no candidates were due for testing) -- skipping final funnel and reporting.
 2026-09-14 14:52:48 | INFO     | src.pipelines.alpha_factory.pipeline | Pass complete. Sleeping 24.0h until next check.
+2026-09-15 14:59:12 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-15 14:59:12 | INFO     | src.pipelines.alpha_factory.pipeline | ALPHA FACTORY PIPELINE
+2026-09-15 14:59:12 | INFO     | src.pipelines.alpha_factory.pipeline | ========================================================================
+2026-09-15 14:59:12 | INFO     | src.pipelines.alpha_factory.pipeline | [1/6] Screening for cointegrated pairs...
