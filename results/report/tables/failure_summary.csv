@@ -1,10 +1,10 @@
 layer,failure_reason,candidate_failures
-layer1,oos_net_sharpe,2114
-layer1,oos_net_return,1876
-layer1,median_neighbor_sharpe,1772
-layer1,positive_neighbor_count,1747
-layer1,worst_neighbor_sharpe,1564
-layer1,trade_profit_concentration,536
+layer1,oos_net_sharpe,2113
+layer1,oos_net_return,1877
+layer1,median_neighbor_sharpe,1775
+layer1,positive_neighbor_count,1748
+layer1,worst_neighbor_sharpe,1568
+layer1,trade_profit_concentration,535
 layer1,oos_trade_count,372
 layer1,no_valid_neighbors,12
 layer2,minimum_oos_sharpe,2200
@@ -13,15 +13,15 @@ layer2,minimum_oos_return,1945
 layer2,maximum_drawdown,1107
 layer2,minimum_oos_trades,287
 layer3,synthetic_drawdown,1578
-layer3,synthetic_terminal_nav,1280
-layer3,synthetic_total_return,1280
+layer3,synthetic_terminal_nav,1282
+layer3,synthetic_total_return,1282
 layer3,worst_window_drawdown,120
 layer3,march_2020_drawdown,117
 layer3,worst_window_net_return,109
 layer3,march_2020_net_return,57
 layer4,deflated_sharpe_probability,2640
 layer4,permutation_p_value,2333
-layer4,bootstrap_probability_negative_return,2275
+layer4,bootstrap_probability_negative_return,2276
 layer4,bootstrap_drawdown_p95,1712
 layer4,bootstrap_trade_count,194
 layer4,exception: ValueError: No valid trade returns available.,102
