@@ -1,9 +1,9 @@
 layer,failure_reason,candidate_failures
 layer1,oos_net_sharpe,2113
-layer1,oos_net_return,1877
-layer1,median_neighbor_sharpe,1775
+layer1,oos_net_return,1878
+layer1,median_neighbor_sharpe,1776
 layer1,positive_neighbor_count,1748
-layer1,worst_neighbor_sharpe,1568
+layer1,worst_neighbor_sharpe,1567
 layer1,trade_profit_concentration,535
 layer1,oos_trade_count,372
 layer1,no_valid_neighbors,12
