@@ -185,11 +185,11 @@ mean_reversion__AUDUSD__entry_z-2p5__exit_z-0p5__lookback-168,mean_reversion,AUD
 mean_reversion__AUDUSD__entry_z-2p5__exit_z-0p5__lookback-24,mean_reversion,AUDUSD,True,True,True,False,False
 mean_reversion__AUDUSD__entry_z-2p5__exit_z-0p5__lookback-48,mean_reversion,AUDUSD,True,True,True,False,False
 mean_reversion__AUDUSD__entry_z-2p5__exit_z-0p5__lookback-96,mean_reversion,AUDUSD,True,True,True,False,False
-mean_reversion__EURUSD__entry_z-1p5__exit_z-0__lookback-168,mean_reversion,EURUSD,False,False,True,False,False
+mean_reversion__EURUSD__entry_z-1p5__exit_z-0__lookback-168,mean_reversion,EURUSD,True,False,True,False,False
 mean_reversion__EURUSD__entry_z-1p5__exit_z-0__lookback-24,mean_reversion,EURUSD,False,False,True,False,False
 mean_reversion__EURUSD__entry_z-1p5__exit_z-0__lookback-48,mean_reversion,EURUSD,False,False,True,False,False
 mean_reversion__EURUSD__entry_z-1p5__exit_z-0__lookback-96,mean_reversion,EURUSD,False,False,True,False,False
-mean_reversion__EURUSD__entry_z-1p5__exit_z-0p5__lookback-168,mean_reversion,EURUSD,False,True,True,False,False
+mean_reversion__EURUSD__entry_z-1p5__exit_z-0p5__lookback-168,mean_reversion,EURUSD,True,True,True,False,False
 mean_reversion__EURUSD__entry_z-1p5__exit_z-0p5__lookback-24,mean_reversion,EURUSD,False,False,True,False,False
 mean_reversion__EURUSD__entry_z-1p5__exit_z-0p5__lookback-48,mean_reversion,EURUSD,False,False,True,False,False
 mean_reversion__EURUSD__entry_z-1p5__exit_z-0p5__lookback-96,mean_reversion,EURUSD,False,False,True,False,False
@@ -247,7 +247,7 @@ mean_reversion__GBPUSD__entry_z-2p5__exit_z-0p5__lookback-48,mean_reversion,GBPU
 mean_reversion__GBPUSD__entry_z-2p5__exit_z-0p5__lookback-96,mean_reversion,GBPUSD,False,True,True,False,False
 mean_reversion__SAP__entry_z-1p5__exit_z-0__lookback-168,mean_reversion,SAP,False,False,False,False,False
 mean_reversion__SAP__entry_z-1p5__exit_z-0__lookback-24,mean_reversion,SAP,False,False,False,False,False
-mean_reversion__SAP__entry_z-1p5__exit_z-0__lookback-48,mean_reversion,SAP,False,False,False,False,False
+mean_reversion__SAP__entry_z-1p5__exit_z-0__lookback-48,mean_reversion,SAP,True,False,False,False,False
 mean_reversion__SAP__entry_z-1p5__exit_z-0__lookback-96,mean_reversion,SAP,False,False,False,False,False
 mean_reversion__SAP__entry_z-1p5__exit_z-0p5__lookback-168,mean_reversion,SAP,False,True,False,False,False
 mean_reversion__SAP__entry_z-1p5__exit_z-0p5__lookback-24,mean_reversion,SAP,False,False,False,False,False
@@ -268,9 +268,9 @@ mean_reversion__SAP__entry_z-2__lookback-24,mean_reversion,SAP,False,False,False
 mean_reversion__SAP__entry_z-2__lookback-48,mean_reversion,SAP,False,False,False,False,False
 mean_reversion__SAP__entry_z-2__lookback-96,mean_reversion,SAP,False,True,False,False,False
 mean_reversion__SAP__entry_z-2p5__exit_z-0__lookback-168,mean_reversion,SAP,False,False,False,False,False
-mean_reversion__SAP__entry_z-2p5__exit_z-0__lookback-24,mean_reversion,SAP,False,False,True,False,False
+mean_reversion__SAP__entry_z-2p5__exit_z-0__lookback-24,mean_reversion,SAP,True,False,True,False,False
 mean_reversion__SAP__entry_z-2p5__exit_z-0__lookback-48,mean_reversion,SAP,True,True,False,False,False
-mean_reversion__SAP__entry_z-2p5__exit_z-0__lookback-96,mean_reversion,SAP,False,False,False,False,False
+mean_reversion__SAP__entry_z-2p5__exit_z-0__lookback-96,mean_reversion,SAP,True,False,False,False,False
 mean_reversion__SAP__entry_z-2p5__exit_z-0p5__lookback-168,mean_reversion,SAP,False,True,False,False,False
 mean_reversion__SAP__entry_z-2p5__exit_z-0p5__lookback-24,mean_reversion,SAP,False,True,True,False,False
 mean_reversion__SAP__entry_z-2p5__exit_z-0p5__lookback-48,mean_reversion,SAP,False,True,False,False,False
@@ -279,7 +279,7 @@ mean_reversion__USDJPY__entry_z-1p5__exit_z-0__lookback-168,mean_reversion,USDJP
 mean_reversion__USDJPY__entry_z-1p5__exit_z-0__lookback-24,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-1p5__exit_z-0__lookback-48,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-1p5__exit_z-0__lookback-96,mean_reversion,USDJPY,False,False,False,False,False
-mean_reversion__USDJPY__entry_z-1p5__exit_z-0p5__lookback-168,mean_reversion,USDJPY,False,False,True,False,False
+mean_reversion__USDJPY__entry_z-1p5__exit_z-0p5__lookback-168,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-1p5__exit_z-0p5__lookback-24,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-1p5__exit_z-0p5__lookback-48,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-1p5__exit_z-0p5__lookback-96,mean_reversion,USDJPY,False,False,False,False,False
@@ -293,7 +293,7 @@ mean_reversion__USDJPY__entry_z-2__exit_z-0__lookback-96,mean_reversion,USDJPY,F
 mean_reversion__USDJPY__entry_z-2__exit_z-0p5__lookback-168,mean_reversion,USDJPY,False,False,True,False,False
 mean_reversion__USDJPY__entry_z-2__exit_z-0p5__lookback-24,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-2__exit_z-0p5__lookback-48,mean_reversion,USDJPY,False,False,False,False,False
-mean_reversion__USDJPY__entry_z-2__exit_z-0p5__lookback-96,mean_reversion,USDJPY,False,False,True,False,False
+mean_reversion__USDJPY__entry_z-2__exit_z-0p5__lookback-96,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-2__lookback-24,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-2__lookback-48,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-2__lookback-96,mean_reversion,USDJPY,False,False,True,False,False
@@ -301,7 +301,7 @@ mean_reversion__USDJPY__entry_z-2p5__exit_z-0__lookback-168,mean_reversion,USDJP
 mean_reversion__USDJPY__entry_z-2p5__exit_z-0__lookback-24,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-2p5__exit_z-0__lookback-48,mean_reversion,USDJPY,False,False,True,False,False
 mean_reversion__USDJPY__entry_z-2p5__exit_z-0__lookback-96,mean_reversion,USDJPY,False,True,True,False,False
-mean_reversion__USDJPY__entry_z-2p5__exit_z-0p5__lookback-168,mean_reversion,USDJPY,True,False,True,False,False
+mean_reversion__USDJPY__entry_z-2p5__exit_z-0p5__lookback-168,mean_reversion,USDJPY,False,False,True,False,False
 mean_reversion__USDJPY__entry_z-2p5__exit_z-0p5__lookback-24,mean_reversion,USDJPY,False,False,False,False,False
 mean_reversion__USDJPY__entry_z-2p5__exit_z-0p5__lookback-48,mean_reversion,USDJPY,False,False,True,False,False
 mean_reversion__USDJPY__entry_z-2p5__exit_z-0p5__lookback-96,mean_reversion,USDJPY,False,False,True,False,False
@@ -323,7 +323,7 @@ mean_reversion__VOD__entry_z-2__exit_z-0__lookback-96,mean_reversion,VOD,True,Fa
 mean_reversion__VOD__entry_z-2__exit_z-0p5__lookback-168,mean_reversion,VOD,True,False,False,False,False
 mean_reversion__VOD__entry_z-2__exit_z-0p5__lookback-24,mean_reversion,VOD,False,False,False,False,False
 mean_reversion__VOD__entry_z-2__exit_z-0p5__lookback-48,mean_reversion,VOD,False,False,False,False,False
-mean_reversion__VOD__entry_z-2__exit_z-0p5__lookback-96,mean_reversion,VOD,True,False,False,False,False
+mean_reversion__VOD__entry_z-2__exit_z-0p5__lookback-96,mean_reversion,VOD,False,False,False,False,False
 mean_reversion__VOD__entry_z-2__lookback-24,mean_reversion,VOD,False,False,False,False,False
 mean_reversion__VOD__entry_z-2__lookback-48,mean_reversion,VOD,False,False,False,False,False
 mean_reversion__VOD__entry_z-2__lookback-96,mean_reversion,VOD,False,False,False,False,False
@@ -1138,7 +1138,7 @@ momentum_ewma__SAP__span-240__threshold-0p0002,momentum_ewma,SAP,False,False,Fal
 momentum_ewma__SAP__span-24__threshold-0,momentum_ewma,SAP,False,False,False,False,False
 momentum_ewma__SAP__span-24__threshold-0p0002,momentum_ewma,SAP,True,False,False,False,False
 momentum_ewma__SAP__span-96__threshold-0,momentum_ewma,SAP,False,False,False,False,False
-momentum_ewma__SAP__span-96__threshold-0p0002,momentum_ewma,SAP,True,False,False,False,False
+momentum_ewma__SAP__span-96__threshold-0p0002,momentum_ewma,SAP,False,False,False,False,False
 momentum_ewma__USDJPY__span-240__threshold-0,momentum_ewma,USDJPY,False,False,True,False,False
 momentum_ewma__USDJPY__span-240__threshold-0p0002,momentum_ewma,USDJPY,False,False,True,False,False
 momentum_ewma__USDJPY__span-24__threshold-0,momentum_ewma,USDJPY,False,False,True,False,False
@@ -1152,7 +1152,7 @@ momentum_ewma__VOD__span-24__threshold-0p0002,momentum_ewma,VOD,False,False,Fals
 momentum_ewma__VOD__span-96__threshold-0,momentum_ewma,VOD,False,False,False,False,False
 momentum_ewma__VOD__span-96__threshold-0p0002,momentum_ewma,VOD,False,False,False,False,False
 momentum_ewma__XAGUSD__span-240__threshold-0,momentum_ewma,XAGUSD,False,False,False,False,False
-momentum_ewma__XAGUSD__span-240__threshold-0p0002,momentum_ewma,XAGUSD,True,False,False,False,False
+momentum_ewma__XAGUSD__span-240__threshold-0p0002,momentum_ewma,XAGUSD,False,False,False,False,False
 momentum_ewma__XAGUSD__span-24__threshold-0,momentum_ewma,XAGUSD,False,False,False,False,False
 momentum_ewma__XAGUSD__span-24__threshold-0p0002,momentum_ewma,XAGUSD,False,False,False,False,False
 momentum_ewma__XAGUSD__span-96__threshold-0,momentum_ewma,XAGUSD,False,False,False,False,False
@@ -1631,7 +1631,7 @@ stat_arb__AUDUSD_VOD__entry_z-1p5__lookback-24,stat_arb,AUDUSD_VOD,True,False,Fa
 stat_arb__AUDUSD_VOD__entry_z-1p5__lookback-48,stat_arb,AUDUSD_VOD,True,False,False,False,False
 stat_arb__AUDUSD_VOD__entry_z-1p5__lookback-96,stat_arb,AUDUSD_VOD,True,False,False,False,False
 stat_arb__AUDUSD_VOD__entry_z-2__exit_z-0__lookback-168,stat_arb,AUDUSD_VOD,True,True,False,False,False
-stat_arb__AUDUSD_VOD__entry_z-2__exit_z-0__lookback-24,stat_arb,AUDUSD_VOD,True,False,False,False,False
+stat_arb__AUDUSD_VOD__entry_z-2__exit_z-0__lookback-24,stat_arb,AUDUSD_VOD,True,True,False,False,False
 stat_arb__AUDUSD_VOD__entry_z-2__exit_z-0__lookback-48,stat_arb,AUDUSD_VOD,True,True,False,False,False
 stat_arb__AUDUSD_VOD__entry_z-2__exit_z-0__lookback-96,stat_arb,AUDUSD_VOD,True,True,False,False,False
 stat_arb__AUDUSD_VOD__entry_z-2__exit_z-0p5__lookback-168,stat_arb,AUDUSD_VOD,True,False,False,False,False
@@ -2310,8 +2310,8 @@ volatility__SAP__num_std-2__window-40,volatility,SAP,False,False,False,False,Fal
 volatility__SAP__num_std-2p5__window-20,volatility,SAP,False,False,False,False,False
 volatility__SAP__num_std-2p5__window-40,volatility,SAP,False,False,False,False,False
 volatility__USDJPY__exit_num_std-0__num_std-1p5__window-20,volatility,USDJPY,True,True,True,False,False
-volatility__USDJPY__exit_num_std-0__num_std-1p5__window-40,volatility,USDJPY,False,False,True,False,False
-volatility__USDJPY__exit_num_std-0__num_std-1p5__window-80,volatility,USDJPY,False,False,True,False,False
+volatility__USDJPY__exit_num_std-0__num_std-1p5__window-40,volatility,USDJPY,True,False,True,False,False
+volatility__USDJPY__exit_num_std-0__num_std-1p5__window-80,volatility,USDJPY,True,False,True,False,False
 volatility__USDJPY__exit_num_std-0__num_std-2__window-20,volatility,USDJPY,True,True,True,False,False
 volatility__USDJPY__exit_num_std-0__num_std-2__window-40,volatility,USDJPY,False,True,True,False,False
 volatility__USDJPY__exit_num_std-0__num_std-2__window-80,volatility,USDJPY,False,False,True,False,False
@@ -2332,7 +2332,7 @@ volatility__USDJPY__exit_num_std-0p5__num_std-2p5__window-40,volatility,USDJPY,T
 volatility__USDJPY__exit_num_std-0p5__num_std-2p5__window-80,volatility,USDJPY,False,False,True,False,False
 volatility__USDJPY__exit_num_std-0p5__num_std-3__window-20,volatility,USDJPY,True,True,True,False,False
 volatility__USDJPY__exit_num_std-0p5__num_std-3__window-40,volatility,USDJPY,True,True,True,False,False
-volatility__USDJPY__exit_num_std-0p5__num_std-3__window-80,volatility,USDJPY,False,False,True,False,False
+volatility__USDJPY__exit_num_std-0p5__num_std-3__window-80,volatility,USDJPY,True,False,True,False,False
 volatility__USDJPY__num_std-1p5__window-20,volatility,USDJPY,True,True,True,False,False
 volatility__USDJPY__num_std-1p5__window-40,volatility,USDJPY,False,True,True,False,False
 volatility__USDJPY__num_std-2__window-20,volatility,USDJPY,False,True,True,False,False
@@ -2422,7 +2422,7 @@ volatility__XAUUSD__exit_num_std-0p5__num_std-2p5__window-40,volatility,XAUUSD,T
 volatility__XAUUSD__exit_num_std-0p5__num_std-2p5__window-80,volatility,XAUUSD,True,True,True,False,False
 volatility__XAUUSD__exit_num_std-0p5__num_std-3__window-20,volatility,XAUUSD,False,True,True,False,False
 volatility__XAUUSD__exit_num_std-0p5__num_std-3__window-40,volatility,XAUUSD,False,True,True,False,False
-volatility__XAUUSD__exit_num_std-0p5__num_std-3__window-80,volatility,XAUUSD,False,True,True,False,False
+volatility__XAUUSD__exit_num_std-0p5__num_std-3__window-80,volatility,XAUUSD,True,True,True,False,False
 volatility__XAUUSD__num_std-1p5__window-20,volatility,XAUUSD,True,True,True,False,False
 volatility__XAUUSD__num_std-1p5__window-40,volatility,XAUUSD,True,True,True,False,False
 volatility__XAUUSD__num_std-2__window-20,volatility,XAUUSD,False,False,True,False,False

@@ -4,8 +4,8 @@ trend_macd__USDJPY__fast_span-12__signal_span-18__slow_span-104,10.9%,1.17,-22.4
 volatility_vix_regime__XAGUSD__realized_vol_window-96__threshold-0,45.4%,1.09,-54.0%,323,False,False,False,False,False
 trend_macd__USDJPY__fast_span-24__signal_span-9__slow_span-104,10.1%,1.08,-22.0%,1779,True,True,True,False,False
 trend_macd__USDJPY__fast_span-24__signal_span-18__slow_span-104,9.7%,1.04,-19.2%,1275,True,True,True,False,False
-stat_arb_rsi__AUDUSD_VOD__entry_band-20__window-48,29.3%,1.03,-32.1%,57,False,False,False,False,False
+stat_arb_rsi__AUDUSD_VOD__entry_band-20__window-48,29.1%,1.02,-32.1%,57,False,False,False,False,False
+volatility__USDJPY__exit_num_std-0__num_std-2p5__window-20,6.4%,1.02,-6.0%,955,True,True,True,False,False
 trend_macd__XAUUSD__fast_span-24__signal_span-18__slow_span-26,20.2%,1.00,-22.4%,1774,True,True,True,False,False
 volatility__USDJPY__num_std-2p5__window-20,6.2%,0.99,-6.0%,946,True,True,True,False,False
-volatility__USDJPY__exit_num_std-0__num_std-2p5__window-20,6.1%,0.98,-6.0%,951,True,True,True,False,False
 volatility_vix_regime__XAGUSD__realized_vol_window-96__threshold-5,36.1%,0.97,-54.0%,343,False,False,False,False,False
